@@ -9,14 +9,21 @@
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
-    "ts-coverage": "rm -rf coverage-ts && typescript-coverage-report"
+    "ts-coverage": "rm -rf coverage-ts && typescript-coverage-report",
+    "migration:generate": "drizzle-kit generate:pg",
+    "migration:run": "tsx ./src/migrate.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "overrides": {
+    "react": "18.0.0"
+  },
   "devDependencies": {
+    "@types/node": "^20.11.13",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
+    "drizzle-kit": "^0.20.13",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
@@ -30,6 +37,9 @@
   },
   "dependencies": {
     "bignumber.js": "^9.1.2",
-    "nanoid": "^3.3.4"
+    "dotenv": "^16.4.1",
+    "drizzle-orm": "^0.29.3",
+    "nanoid": "^3.3.4",
+    "postgres": "^3.4.3"
   }
 }
