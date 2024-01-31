@@ -1,0 +1,33 @@
+version: '3'
+services:
+  api:
+    container_name: lugo-api
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://lugo:passw0rd@postgres:5432/lugo
+      - NODE_ENV=development
+      - PORT=3000
+    ports:
+      - '3000:3000'
+  db:
+    container_name: db
+    image: postgres:16.1
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    environment:
+      - POSTGRES_USER=lugo
+      - POSTGRES_PASSWORD=passw0rd
+      - POSTGRES_DB=lugo
+volumes:
+  db-data:

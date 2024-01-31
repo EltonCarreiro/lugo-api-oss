@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "es2016",
+    /* Modules */
+    "module": "CommonJS",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "resolveJsonModule": true,
+    /* Emit */
+    "sourceMap": true,
+    "outDir": "./dist",
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    /* Type Checking */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true
+  }
+}
