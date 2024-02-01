@@ -58,7 +58,7 @@ Spin up API and database using docker-compose:
 docker-compose up -d
 ```
 
-Or if you prefer, run it directly:
+Or if you prefer, run it directly (must have a running database):
 
 ```shell
 DATABASE_URL=postgres://lugo:passw0rd@localhost:5432/lugo npm run dev
