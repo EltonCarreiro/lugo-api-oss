@@ -1,4 +1,5 @@
 import { AuthUseCases } from '@/useCases/AuthUseCases';
+import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 import SchemaBuilder from '@pothos/core';
 
@@ -10,6 +11,7 @@ export interface Usuario {
 interface UseCases {
   auth: AuthUseCases;
   usuario: UsuarioUseCases;
+  usuarioPessoa: UsuarioPessoaUseCases;
 }
 
 export interface SchemaType {

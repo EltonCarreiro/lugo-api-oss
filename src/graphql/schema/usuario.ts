@@ -8,26 +8,37 @@ export const Usuario = builder.objectRef<UsuarioType>('Usuario').implement({
   })
 });
 
-builder.mutationField('criarUsuario', (t) =>
+builder.mutationField('criarPessoaEUsuario', (t) =>
   t.field({
     type: Usuario,
     args: {
-      codigoPessoa: t.arg.string({ required: true }),
+      nome: t.arg.string({ required: true }),
+      sobrenome: t.arg.string({ required: true }),
+      cpf: t.arg.string({ required: true }),
       email: t.arg.string({ required: true }),
       senha: t.arg.string({ required: true }),
       confirmacaoSenha: t.arg.string({ required: true })
     },
-    resolve: (
+    resolve: async (
       _parent,
-      { codigoPessoa, email, senha, confirmacaoSenha },
+      { nome, sobrenome, cpf, email, senha, confirmacaoSenha },
       context
-    ) =>
-      context.useCases.usuario.criarUsuario({
-        codigoPessoa,
-        email,
-        senha,
-        confirmacaoSenha
-      })
+    ) => {
+      const criarPessoaEUsuarioResult =
+        await context.useCases.usuarioPessoa.criarPessoaEUsuario({
+          nome,
+          sobrenome,
+          cpf,
+          email,
+          senha,
+          confirmacaoSenha
+        });
+
+      return {
+        codigo: criarPessoaEUsuarioResult.codigoUsuario,
+        email: criarPessoaEUsuarioResult.email
+      };
+    }
   })
 );
 

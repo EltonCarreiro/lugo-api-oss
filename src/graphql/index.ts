@@ -4,10 +4,12 @@ import { buildSchema } from './schema';
 import { AuthUseCases } from '@/useCases/AuthUseCases';
 import { SchemaType } from './schema/builder';
 import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
+import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 
 export const setup = () => {
   const authUseCases = new AuthUseCases();
   const usuarioUseCases = new UsuarioUseCases();
+  const usuarioPessoaUseCases = new UsuarioPessoaUseCases();
 
   const yoga = createYoga({
     schema: buildSchema(),
@@ -17,7 +19,8 @@ export const setup = () => {
       return {
         useCases: {
           auth: authUseCases,
-          usuario: usuarioUseCases
+          usuario: usuarioUseCases,
+          usuarioPessoa: usuarioPessoaUseCases
         },
         usuarioLogado:
           authToken === null
