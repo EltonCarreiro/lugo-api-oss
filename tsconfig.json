@@ -6,7 +6,7 @@
     "module": "CommonJS",
     "baseUrl": "src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["*"]
     },
     "resolveJsonModule": true,
     /* Emit */
@@ -20,5 +20,7 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["node_modules", "dist"]
 }
