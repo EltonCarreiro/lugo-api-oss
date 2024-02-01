@@ -112,9 +112,9 @@ export class UsuarioUseCases {
 
     if (usuarioExistente !== undefined) {
       if (usuarioExistente.idPessoa === pessoaExistente.id) {
-        throw new Error('Pessoa já possui usuário cadastrado.');
+        throw new BusinessError('Pessoa já possui usuário cadastrado.');
       } else {
-        throw new Error('Email já cadastrado.');
+        throw new BusinessError('Email já cadastrado.');
       }
     }
 

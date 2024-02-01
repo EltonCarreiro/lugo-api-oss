@@ -1,5 +1,6 @@
 import { builder } from './builder';
 import { Usuario } from './usuario';
+import './errors';
 
 export const buildSchema = () => {
   builder.queryType({

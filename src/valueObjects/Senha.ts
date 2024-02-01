@@ -1,3 +1,4 @@
+import { BusinessError } from '@/errors/BusinessError';
 import crypto from 'crypto';
 
 export class Senha {
@@ -5,7 +6,7 @@ export class Senha {
 
   constructor(value: string) {
     if (value.length === 0) {
-      throw new Error('Senha não pode ser vazia');
+      throw new BusinessError('Senha não pode ser vazia');
     }
 
     this.value = this.createMD5Hash(value);

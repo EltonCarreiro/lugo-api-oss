@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@pothos/core": "^3.41.0",
+    "@pothos/plugin-errors": "^3.11.1",
     "bignumber.js": "^9.1.2",
     "dotenv": "^16.4.1",
     "drizzle-orm": "^0.29.3",

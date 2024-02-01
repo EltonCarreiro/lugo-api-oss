@@ -2,6 +2,7 @@ import { AuthUseCases } from '@/useCases/AuthUseCases';
 import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 import SchemaBuilder from '@pothos/core';
+import ErrorsPlugin from '@pothos/plugin-errors';
 
 export interface Usuario {
   codigo: string;
@@ -21,4 +22,6 @@ export interface SchemaType {
   };
 }
 
-export const builder = new SchemaBuilder<SchemaType>({});
+export const builder = new SchemaBuilder<SchemaType>({
+  plugins: [ErrorsPlugin]
+});

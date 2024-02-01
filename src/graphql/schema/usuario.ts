@@ -1,3 +1,4 @@
+import { BusinessError } from '@/errors/BusinessError';
 import { Usuario as UsuarioType, builder } from './builder';
 
 export const Usuario = builder.objectRef<UsuarioType>('Usuario').implement({
@@ -11,6 +12,9 @@ export const Usuario = builder.objectRef<UsuarioType>('Usuario').implement({
 builder.mutationField('criarPessoaEUsuario', (t) =>
   t.field({
     type: Usuario,
+    errors: {
+      types: [Error, BusinessError]
+    },
     args: {
       nome: t.arg.string({ required: true }),
       sobrenome: t.arg.string({ required: true }),
