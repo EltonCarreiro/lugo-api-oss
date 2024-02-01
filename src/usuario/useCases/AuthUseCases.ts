@@ -1,6 +1,6 @@
 import { db } from '@/db/index';
 import { BusinessError } from '@/shared/errors/BusinessError';
-import { createMD5Hash } from '@/utils/createMD5Hash';
+import { Senha } from '@/shared/valueObjects/Senha';
 import { nanoid } from 'nanoid';
 
 interface LoginArgs {
@@ -27,9 +27,7 @@ export class AuthUseCases {
   }
 
   public async login({ email, senha }: LoginArgs): Promise<string> {
-    // Using MD5 hash for password is wrong! This is insecure and only used for demonstration!
-    // Use PBKDF2 instead!
-    const senhaHash = createMD5Hash(senha);
+    const senhaHash = new Senha(senha).value;
 
     const usuarioEncontrado = await db.query.usuario.findFirst({
       columns: {

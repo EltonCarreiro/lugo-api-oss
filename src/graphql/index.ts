@@ -3,9 +3,11 @@ import { createServer } from 'http';
 import { buildSchema } from './schema';
 import { AuthUseCases } from '@/usuario/useCases/AuthUseCases';
 import { SchemaType } from './schema/builder';
+import { UsuarioUseCases } from '@/usuario/useCases/UsuarioUseCases';
 
 export const setup = () => {
   const authUseCases = new AuthUseCases();
+  const usuarioUseCases = new UsuarioUseCases();
 
   const yoga = createYoga({
     schema: buildSchema(),
@@ -14,7 +16,8 @@ export const setup = () => {
 
       return {
         useCases: {
-          auth: authUseCases
+          auth: authUseCases,
+          usuario: usuarioUseCases
         },
         usuarioLogado:
           authToken === null
