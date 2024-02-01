@@ -34,6 +34,10 @@ So, if we don't need it, we don't build it. This way we ship faster, with less i
 
 We want to start simple and be effective, so we write dead simple code and project structure. I also recommend [Vertical Slice Architecture](https://www.jimmybogard.com/vertical-slice-architecture/), its simplicity is amazing!
 
+## Notes on language 🇧🇷
+
+Part of the codebase is written in English and part of the codebase is written in Portuguese. Because this API targets Brazilian real estate officers, all the domain-related code is written in Portuguese to facilitate the understanding of the concepts
+
 ## What is Lugo:
 
 This is Lugo Open Source Version, a lightweight API that aims to help small real state offices to register and publish their managed real estates. This repository will only include the very basic functionalities (this may be changed/extended as the app is implemented):
