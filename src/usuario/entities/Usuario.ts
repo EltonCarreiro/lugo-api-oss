@@ -1,4 +1,4 @@
-import { BusinessError } from 'shared/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 
 interface UsuarioConstructorArgs {
   codigo: string;
@@ -7,6 +7,22 @@ interface UsuarioConstructorArgs {
 }
 
 export class Usuario {
+  public get codigo() {
+    return this._codigo;
+  }
+
+  public get email() {
+    return this._email;
+  }
+
+  public get senha() {
+    return this._senha;
+  }
+
+  private _codigo: string;
+  private _email: string;
+  private _senha: string;
+
   constructor({ codigo, email, senha }: UsuarioConstructorArgs) {
     if (codigo.length === 0) {
       throw new BusinessError('Código de usuário obrigatório.');
@@ -25,18 +41,6 @@ export class Usuario {
     this._senha = senha;
   }
 
-  public get codigo() {
-    return this._codigo;
-  }
-
-  public get email() {
-    return this._email;
-  }
-
-  public get senha() {
-    return this._senha;
-  }
-
   public alterarSenha(novaSenha: string, confirmacaoNovaSenha: string) {
     if (novaSenha.length === 0) {
       throw new BusinessError('Nova senha não pode ser vazia');
@@ -48,8 +52,4 @@ export class Usuario {
 
     this._senha = novaSenha;
   }
-
-  private _codigo: string;
-  private _email: string;
-  private _senha: string;
 }
