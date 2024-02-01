@@ -1,5 +1,5 @@
 {
-  "id": "ea6d37de-beb8-4e60-9d41-29f7b9ee24ad",
+  "id": "c83d76cb-d97d-4ae2-9e98-4fc89367f1c0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -195,13 +195,13 @@
           "name": "email",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "senha": {
           "name": "senha",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {},

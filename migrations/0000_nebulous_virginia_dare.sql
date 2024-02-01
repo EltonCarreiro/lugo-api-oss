@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS "lugo"."usuario" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"pessoa_id" integer,
 	"codigo" text NOT NULL,
-	"email" text,
-	"senha" text,
+	"email" text NOT NULL,
+	"senha" text NOT NULL,
 	CONSTRAINT "usuario_codigo_unique" UNIQUE("codigo")
 );
 --> statement-breakpoint
