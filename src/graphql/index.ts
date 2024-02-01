@@ -1,9 +1,9 @@
 import { createYoga } from 'graphql-yoga';
 import { createServer } from 'http';
 import { buildSchema } from './schema';
-import { AuthUseCases } from '@/usuario/useCases/AuthUseCases';
+import { AuthUseCases } from '@/useCases/AuthUseCases';
 import { SchemaType } from './schema/builder';
-import { UsuarioUseCases } from '@/usuario/useCases/UsuarioUseCases';
+import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 
 export const setup = () => {
   const authUseCases = new AuthUseCases();

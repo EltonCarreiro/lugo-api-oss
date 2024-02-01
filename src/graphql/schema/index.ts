@@ -20,5 +20,7 @@ export const buildSchema = () => {
     })
   });
 
+  builder.mutationType({});
+
   return builder.toSchema();
 };

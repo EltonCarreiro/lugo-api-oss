@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { Imovel } from '../entities/Imovel';
-import { BusinessError } from 'shared/errors/BusinessError';
+import { BusinessError } from '@/errors/BusinessError';
 
 interface CriarImovelArgs {
   metrosQuadrados: number;

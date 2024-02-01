@@ -1,4 +1,4 @@
-import { PessoaUseCases } from '@/pessoa/useCases/PessoaUseCases';
+import { PessoaUseCases } from '@/useCases/PessoaUseCases';
 import { UsuarioUseCases } from './UsuarioUseCases';
 import { db } from '@/db';
 

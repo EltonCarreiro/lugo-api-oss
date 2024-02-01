@@ -1,7 +1,7 @@
-import { BusinessError } from 'shared/errors/BusinessError';
+import { BusinessError } from '@/errors/BusinessError';
 import { Usuario } from '../entities/Usuario';
 import { DbTransaction, db } from '@/db';
-import { Senha } from '@/shared/valueObjects/Senha';
+import { Senha } from '@/valueObjects/Senha';
 import { usuario } from '@/schema';
 import { nanoid } from 'nanoid';
 
