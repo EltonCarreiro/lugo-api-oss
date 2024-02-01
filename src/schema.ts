@@ -20,8 +20,8 @@ export const usuario = schema.table('usuario', {
   id: serial('id').primaryKey(),
   idPessoa: integer('pessoa_id').references(() => pessoa.id),
   codigo: text('codigo').unique().notNull(),
-  email: text('email'),
-  senha: text('senha')
+  email: text('email').notNull(),
+  senha: text('senha').notNull()
 });
 
 export const imovel = schema.table('imovel', {
