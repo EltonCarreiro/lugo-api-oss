@@ -1,4 +1,4 @@
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 import { Usuario } from '../entities/Usuario';
 import { DbTransaction, db } from '@/db';
 import { Senha } from '@/valueObjects/Senha';

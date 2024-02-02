@@ -24,14 +24,18 @@ export const usuario = schema.table('usuario', {
   senha: text('senha').notNull()
 });
 
+export const usuarioRelations = relations(usuario, ({ one }) => ({
+  pessoa: one(pessoa)
+}));
+
 export const imovel = schema.table('imovel', {
   id: serial('id').primaryKey(),
   idDono: integer('dono_id')
     .notNull()
     .references(() => pessoa.id),
-  codigo: text('codigo'),
+  codigo: text('codigo').unique().notNull(),
   metrosQuadrados: integer('metros_quadrados'),
-  endereco: text('endereco')
+  endereco: text('endereco').notNull()
 });
 
 export const imovelRelations = relations(imovel, ({ one }) => ({

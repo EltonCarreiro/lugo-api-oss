@@ -1,4 +1,4 @@
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 import { builder } from './builder';
 
 const ErrorInterface = builder.interfaceRef<Error>('Error').implement({

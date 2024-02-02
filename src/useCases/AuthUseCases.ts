@@ -1,5 +1,5 @@
 import { db } from '@/db/index';
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 import { Senha } from '@/valueObjects/Senha';
 import { nanoid } from 'nanoid';
 
