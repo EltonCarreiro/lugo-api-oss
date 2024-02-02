@@ -1,20 +1,16 @@
 import { builder } from './builder';
 import { Usuario } from './usuario';
+
+import './authentication';
 import './errors';
 
 export const buildSchema = () => {
   builder.queryType({
     fields: (t) => ({
-      hello: t.string({
-        args: {
-          name: t.arg.string()
-        },
-        resolve: (_parent, { name }) => `hello, ${name || 'World'}`
-      }),
       usuario: t.field({
         type: Usuario,
         nullable: true,
-        resolve: (_parent, _ars, ctx) => {
+        resolve: (_parent, _args, ctx) => {
           return ctx.usuarioLogado;
         }
       })

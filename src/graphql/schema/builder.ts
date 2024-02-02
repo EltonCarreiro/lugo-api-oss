@@ -18,6 +18,7 @@ interface UseCases {
 export interface SchemaType {
   Context: {
     useCases: UseCases;
+    jwt: string | undefined;
     usuarioLogado: Usuario | undefined;
   };
 }

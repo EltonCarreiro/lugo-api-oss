@@ -1,4 +1,4 @@
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 
 interface UsuarioConstructorArgs {
   codigo: string;

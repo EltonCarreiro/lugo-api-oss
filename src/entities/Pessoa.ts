@@ -1,5 +1,5 @@
 import { Cpf } from '@/valueObjects/Cpf';
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 
 export class Pessoa {
   public cpf: Cpf;

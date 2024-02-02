@@ -1,4 +1,4 @@
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 import { Usuario as UsuarioType, builder } from './builder';
 
 export const Usuario = builder.objectRef<UsuarioType>('Usuario').implement({

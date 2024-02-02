@@ -1,7 +1,7 @@
 import { DbTransaction, db } from '@/db';
 import { Pessoa } from '../entities/Pessoa';
 import { nanoid } from 'nanoid';
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
 import { pessoa } from 'schema';
 
 interface CriarPessoaArgs {

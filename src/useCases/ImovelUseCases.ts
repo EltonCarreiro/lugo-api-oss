@@ -1,6 +1,8 @@
 import { nanoid } from 'nanoid';
 import { Imovel } from '../entities/Imovel';
-import { BusinessError } from '@/errors/BusinessError';
+import { BusinessError } from '@/shared/errors/BusinessError';
+import { db } from '@/db';
+import { imovel } from '@/schema';
 
 interface CriarImovelArgs {
   metrosQuadrados: number;
@@ -9,7 +11,7 @@ interface CriarImovelArgs {
 }
 
 interface AlterarImovelArgs {
-  codigo: string;
+  codigoImovel: string;
   metrosQuadrados: number;
   endereco: string;
   codigoUsuarioSolicitante: string;
@@ -18,7 +20,7 @@ interface AlterarImovelArgs {
 export class ImovelUseCases {
   _imoveis: Imovel[] = [];
 
-  cadastrarImovel({
+  public async cadastrarImovel({
     metrosQuadrados,
     endereco,
     codigoUsuarioSolicitante
@@ -30,38 +32,76 @@ export class ImovelUseCases {
       endereco
     });
 
-    this._imoveis.push(novoImovel);
-    return Promise.resolve(novoImovel.codigo);
+    return db.transaction(async (trx): Promise<string> => {
+      const dono = await trx.query.usuario.findFirst({
+        with: {
+          pessoa: true
+        }
+      });
+
+      if (dono === undefined) {
+        throw new BusinessError('Pessoa associada á conta não encontrada.');
+      }
+
+      await db.insert(imovel).values({
+        codigo: novoImovel.codigo,
+        idDono: dono.id,
+        endereco: novoImovel.endereco,
+        metrosQuadrados: novoImovel.metrosQuadrados
+      });
+
+      return novoImovel.codigo;
+    });
   }
 
   alterarImovel({
-    codigo,
+    codigoImovel,
     metrosQuadrados,
     endereco,
     codigoUsuarioSolicitante
   }: AlterarImovelArgs): Promise<void> {
-    const imovel = this._imoveis.find(
-      ({ codigo: codigoImovel }) => codigoImovel === codigo
-    );
+    return db.transaction(async (trx) => {
+      const imovelDb = await trx.query.imovel.findFirst({
+        with: {
+          dono: {
+            with: {
+              usuario: true
+            }
+          }
+        },
+        where: ({ codigo }, { eq }) => eq(codigo, codigoImovel)
+      });
 
-    if (imovel === undefined) {
-      throw new BusinessError('Imóvel não encontrado');
-    }
-
-    if (imovel.codigoDono !== codigoUsuarioSolicitante) {
-      throw new BusinessError(
-        'Alteração cadastral só pode ser feita pelo dono do imóvel.'
-      );
-    }
-
-    this._imoveis = this._imoveis.map((imovel) => {
-      if (imovel.codigo === codigo) {
-        imovel.atualizarCadastro(metrosQuadrados, endereco);
+      if (imovelDb === undefined) {
+        throw new BusinessError('Imóvel não encontrado');
       }
 
-      return imovel;
-    });
+      const dono = imovelDb.dono ?? undefined;
+      const usuario = dono?.usuario ?? undefined;
 
-    return Promise.resolve();
+      if (
+        dono === undefined ||
+        usuario === undefined ||
+        usuario.codigo !== codigoUsuarioSolicitante
+      ) {
+        throw new BusinessError(
+          'Alteração cadastral só pode ser feita pelo dono do imóvel.'
+        );
+      }
+
+      const imovelEntidade = new Imovel({
+        codigo: imovelDb.codigo,
+        codigoDono: dono.codigo,
+        endereco: imovelDb.endereco,
+        metrosQuadrados: imovelDb.metrosQuadrados ?? undefined
+      });
+
+      imovelEntidade.atualizarCadastro(metrosQuadrados, endereco);
+
+      await trx.update(imovel).set({
+        metrosQuadrados: imovelEntidade.metrosQuadrados,
+        endereco: imovelEntidade.endereco
+      });
+    });
   }
 }
