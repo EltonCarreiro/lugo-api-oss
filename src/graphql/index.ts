@@ -1,20 +1,21 @@
 import { createYoga } from 'graphql-yoga';
 import { createServer } from 'http';
 import { buildSchema } from './schema';
-import { AuthUseCases } from '@/useCases/AuthUseCases';
+import { AuthUseCases, JWTConfig } from '@/useCases/AuthUseCases';
 import { SchemaType } from './schema/builder';
 import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
+import { useCookies } from '@whatwg-node/server-plugin-cookies';
 
-export const setup = () => {
-  const authUseCases = new AuthUseCases();
+export const setup = (jwtConfig: JWTConfig) => {
+  const authUseCases = new AuthUseCases(jwtConfig);
   const usuarioUseCases = new UsuarioUseCases();
   const usuarioPessoaUseCases = new UsuarioPessoaUseCases();
 
   const yoga = createYoga({
     schema: buildSchema(),
     context: async ({ request }): Promise<SchemaType['Context']> => {
-      const authToken = request.headers.get('auth-token');
+      const jwt = (await request.cookieStore?.get('z'))?.value ?? '';
 
       return {
         useCases: {
@@ -22,12 +23,14 @@ export const setup = () => {
           usuario: usuarioUseCases,
           usuarioPessoa: usuarioPessoaUseCases
         },
+        jwt,
         usuarioLogado:
-          authToken === null
+          jwt === undefined
             ? undefined
-            : await authUseCases.obterUsuarioLogado(authToken)
+            : await authUseCases.obterUsuarioLogado(jwt)
       };
-    }
+    },
+    plugins: [useCookies()]
   });
 
   const server = createServer(yoga);

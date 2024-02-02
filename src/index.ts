@@ -1,3 +1,9 @@
 import { setup } from '@/graphql';
 
-setup();
+const jwtSecret = process.env.JWT_SECRET ?? '';
+const jwtAlgorithm = process.env.JWT_ALGORITHM ?? '';
+
+setup({
+  algorithm: jwtAlgorithm,
+  secret: jwtSecret
+});
