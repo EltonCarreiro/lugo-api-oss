@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { Imovel } from '../entities/Imovel';
 import { BusinessError } from '@/shared/errors/BusinessError';
-import { db } from '@/db';
+import { db } from '@/data/db';
 import { imovel } from '@/schema';
 
 interface CriarImovelArgs {
