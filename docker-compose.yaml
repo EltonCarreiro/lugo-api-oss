@@ -6,6 +6,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgres://lugo:passw0rd@db:5432/lugo
@@ -31,5 +33,19 @@ services:
       - POSTGRES_USER=lugo
       - POSTGRES_PASSWORD=passw0rd
       - POSTGRES_DB=lugo
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    environment:
+      - REDIS_PASSWORD=passw0rd
+      - REDIS_DATABASES=1
 volumes:
   db-data:
