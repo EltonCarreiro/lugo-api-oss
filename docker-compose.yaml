@@ -7,8 +7,10 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://lugo:passw0rd@postgres:5432/lugo
       - NODE_ENV=development
+      - DATABASE_URL=postgres://lugo:passw0rd@db:5432/lugo
+      - JWT_SECRET=cd0b72cdb7fd31e88e193879bde37ccdad0937b4d281a846d1aad09996cd3f6e
+      - JWT_ALGORITHM=HS256
       - PORT=3000
     ports:
       - '3000:3000'
