@@ -3,6 +3,7 @@ import { BusinessError } from '@/shared/errors/BusinessError';
 import { Senha } from '@/valueObjects/Senha';
 import { nanoid } from 'nanoid';
 import { SignJWT, jwtVerify } from 'jose';
+import { RedisClient } from '@/data/redis';
 
 interface LoginArgs {
   email: string;
@@ -13,8 +14,6 @@ interface UsuarioLogado {
   codigo: string;
   email: string;
 }
-
-type InMemoryAuthTokenRecord = Map<string, UsuarioLogado>;
 
 interface JWTPayload {
   authToken: string;
@@ -28,7 +27,11 @@ export interface JWTConfig {
 export class AuthUseCases {
   private jwtConfig: JWTConfig;
 
-  constructor(jwtConfig: JWTConfig) {
+  constructor(
+    jwtConfig: JWTConfig,
+    private sessionDurationInSeconds: number,
+    private redis: RedisClient
+  ) {
     if (jwtConfig.secret.trim().length === 0) {
       throw new Error('Authentication secret must not be empty.');
     }
@@ -37,18 +40,34 @@ export class AuthUseCases {
       throw new Error('JWT Algorithm must not be empty.');
     }
 
+    if (sessionDurationInSeconds <= 0) {
+      throw new Error('Session duration invalid. Value must be positive.');
+    }
+
     this.jwtConfig = jwtConfig;
   }
-
-  private usuariosLogados: InMemoryAuthTokenRecord = new Map();
 
   public async obterUsuarioLogado(
     jwt: string
   ): Promise<UsuarioLogado | undefined> {
     try {
-      const usuarioLogado = this.usuariosLogados.get(
-        await this.getAuthTokenFromJWT(jwt)
-      );
+      const codigoUsuario =
+        (await this.redis.get(
+          this.getRedisKey(await this.getAuthTokenFromJWT(jwt))
+        )) ?? undefined;
+
+      if (codigoUsuario === undefined) {
+        return undefined;
+      }
+
+      const usuarioLogado = await db.query.usuario.findFirst({
+        columns: {
+          codigo: true,
+          email: true
+        },
+        where: ({ codigo }, { eq }) => eq(codigo, codigoUsuario)
+      });
+
       return usuarioLogado;
     } catch (_error: unknown) {
       console.log('Bad JWT format. Returning undefined user');
@@ -73,16 +92,17 @@ export class AuthUseCases {
     }
 
     const authToken = nanoid();
-    this.usuariosLogados.set(authToken, usuarioEncontrado);
+    this.redis.set(this.getRedisKey(authToken), usuarioEncontrado.codigo, {
+      EX: this.sessionDurationInSeconds
+    });
 
     return this.signJWT(authToken);
   }
 
   public async logout(jwt: string): Promise<void> {
     try {
-      this.usuariosLogados.delete(await this.getAuthTokenFromJWT(jwt));
+      this.redis.del(this.getRedisKey(await this.getAuthTokenFromJWT(jwt)));
     } catch (_error) {
-      // If JWT is invalid then there's nothing to do.
       return;
     }
   }
@@ -105,5 +125,9 @@ export class AuthUseCases {
       .sign(this.encodedSecret);
 
     return jwt;
+  }
+
+  private getRedisKey(authToken: string) {
+    return `sessions:${authToken}`;
   }
 }
