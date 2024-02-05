@@ -1,7 +1,7 @@
 import { Cpf } from '../Cpf';
 
 describe('CPF testes', () => {
-  it('não deve permitir CPF com menos de 11 dígitos numéricos', () => {
+  it('não deve permitir CPF com mais/menos de 11 dígitos numéricos', () => {
     expect(() => new Cpf('123.123.123-123')).toThrow('CPF Inválido.');
   });
 
