@@ -1,17 +1,48 @@
-import { pgSchema, serial, text, integer, decimal } from 'drizzle-orm/pg-core';
+import {
+  pgSchema,
+  serial,
+  text,
+  integer,
+  decimal,
+  pgEnum,
+  unique
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const schema = pgSchema('lugo');
 
-export const pessoa = schema.table('pessoa', {
+export const empresa = schema.table('empresa', {
   id: serial('id').primaryKey(),
-  codigo: text('codigo').unique().notNull(),
-  nome: text('nome').notNull(),
-  sobrenome: text('sobrenome').notNull(),
-  cpf: text('cpf').unique().notNull()
+  codigo: text('codigo').notNull().unique(),
+  cnpj: text('cnpj').notNull().unique(),
+  nomeFantasia: text('nome_fantasia').notNull(),
+  razaoSocial: text('razao_social').notNull()
 });
 
+export const empresaRelations = relations(empresa, ({ many }) => ({
+  pessoas: many(pessoa)
+}));
+
+export const tipoPessoaEnum = pgEnum('tipo_pessoa', ['funcionario', 'cliente']);
+
+export const pessoa = schema.table(
+  'pessoa',
+  {
+    id: serial('id').primaryKey(),
+    codigo: text('codigo').unique().notNull(),
+    idEmpresa: integer('empresa_id').references(() => empresa.id),
+    nome: text('nome').notNull(),
+    sobrenome: text('sobrenome').notNull(),
+    cpf: text('cpf').notNull(),
+    tipo: tipoPessoaEnum('tipo')
+  },
+  (t) => ({
+    uniqueNomeEmpresa: unique().on(t.idEmpresa, t.cpf)
+  })
+);
+
 export const pessoaRelations = relations(pessoa, ({ one, many }) => ({
+  empresa: one(empresa),
   usuario: one(usuario),
   imoveis: many(imovel)
 }));
