@@ -8,10 +8,17 @@ import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 import { useCookies } from '@whatwg-node/server-plugin-cookies';
 import { getRedisClient } from '@/data/redis';
 
-export const setup = async (jwtConfig: JWTConfig) => {
+export const setup = async (
+  jwtConfig: JWTConfig,
+  sessionDurationInSeconds: number
+) => {
   const redis = await getRedisClient();
 
-  const authUseCases = new AuthUseCases(jwtConfig, redis);
+  const authUseCases = new AuthUseCases(
+    jwtConfig,
+    sessionDurationInSeconds,
+    redis
+  );
   const usuarioUseCases = new UsuarioUseCases();
   const usuarioPessoaUseCases = new UsuarioPessoaUseCases();
 
