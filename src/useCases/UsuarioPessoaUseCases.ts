@@ -40,7 +40,13 @@ export class UsuarioPessoaUseCases {
     return await db.transaction(
       async (trx): Promise<CriarPessoaEUsuarioResult> => {
         const criarPessoaResult = await this.pessoaUseCases.criarPessoa(
-          { nome, sobrenome, cpf, codigoEmpresa: undefined },
+          {
+            nome,
+            sobrenome,
+            cpf,
+            codigoEmpresa: undefined,
+            tipoPessoaEmpresa: 'cliente'
+          },
           trx
         );
         const criarUsuarioResult = await this.usuarioUseCases.criarUsuario(
