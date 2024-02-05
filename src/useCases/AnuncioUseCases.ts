@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { db } from '@/data/db';
 import { Anuncio } from '@/entities/Anuncio';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import BigNumber from 'bignumber.js';

@@ -6,9 +6,12 @@ import { SchemaType } from './schema/builder';
 import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 import { useCookies } from '@whatwg-node/server-plugin-cookies';
+import { getRedisClient } from '@/data/redis';
 
-export const setup = (jwtConfig: JWTConfig) => {
-  const authUseCases = new AuthUseCases(jwtConfig);
+export const setup = async (jwtConfig: JWTConfig) => {
+  const redis = await getRedisClient();
+
+  const authUseCases = new AuthUseCases(jwtConfig, redis);
   const usuarioUseCases = new UsuarioUseCases();
   const usuarioPessoaUseCases = new UsuarioPessoaUseCases();
 

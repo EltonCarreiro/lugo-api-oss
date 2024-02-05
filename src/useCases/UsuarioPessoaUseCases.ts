@@ -1,6 +1,6 @@
 import { PessoaUseCases } from '@/useCases/PessoaUseCases';
 import { UsuarioUseCases } from './UsuarioUseCases';
-import { db } from '@/db';
+import { db } from '@/data/db';
 
 interface CriarPessoaEUsuarioArgs {
   nome: string;

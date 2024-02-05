@@ -1,4 +1,4 @@
-import { DbTransaction, db } from '@/db';
+import { DbTransaction, db } from '@/data/db';
 import { Pessoa } from '../entities/Pessoa';
 import { nanoid } from 'nanoid';
 import { BusinessError } from '@/shared/errors/BusinessError';

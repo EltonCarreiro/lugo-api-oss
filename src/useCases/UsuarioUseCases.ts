@@ -1,6 +1,6 @@
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { Usuario } from '../entities/Usuario';
-import { DbTransaction, db } from '@/db';
+import { DbTransaction, db } from '@/data/db';
 import { Senha } from '@/valueObjects/Senha';
 import { usuario } from '@/schema';
 import { nanoid } from 'nanoid';
