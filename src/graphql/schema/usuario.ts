@@ -1,11 +1,37 @@
 import { BusinessError } from '@/shared/errors/BusinessError';
-import { Usuario as UsuarioType, builder } from './builder';
+import { Usuario as UsuarioBase, builder } from './builder';
+import { Empresa } from './empresa';
+
+interface UsuarioType extends UsuarioBase {
+  empresa: Empresa | undefined;
+}
 
 export const Usuario = builder.objectRef<UsuarioType>('Usuario').implement({
   description: 'Informações do usuário',
   fields: (t) => ({
     codigo: t.exposeString('codigo'),
-    email: t.exposeString('email')
+    email: t.exposeString('email'),
+    empresa: t.field({
+      type: Empresa,
+      nullable: true,
+      description: 'Empresa na qual o usuário está associado.',
+      resolve: async (parent, _args, ctx) => {
+        const empresaAssociada =
+          await ctx.useCases.usuario.obterEmpresaAssociada(parent.codigo);
+
+        if (empresaAssociada === undefined) {
+          return undefined;
+        }
+
+        return {
+          codigo: empresaAssociada.codigo,
+          nomeFantasia: empresaAssociada.nomeFantasia,
+          razaoSocial: empresaAssociada.razaoSocial,
+          cnpj: empresaAssociada.cnpj,
+          clientes: []
+        };
+      }
+    })
   })
 });
 
@@ -40,7 +66,8 @@ builder.mutationField('criarPessoaEUsuario', (t) =>
 
       return {
         codigo: criarPessoaEUsuarioResult.codigoUsuario,
-        email: criarPessoaEUsuarioResult.email
+        email: criarPessoaEUsuarioResult.email,
+        empresa: undefined
       };
     }
   })
@@ -54,11 +81,14 @@ builder.mutationField('alterarSenha', (t) =>
       senha: t.arg.string({ required: true }),
       confirmacaoSenha: t.arg.string({ required: true })
     },
-    resolve: (_parent, { email, senha, confirmacaoSenha }, context) =>
-      context.useCases.usuario.alterarSenha({
+    resolve: async (_parent, { email, senha, confirmacaoSenha }, context) => {
+      const result = await context.useCases.usuario.alterarSenha({
         email,
         senha,
         confirmacaoSenha
-      })
+      });
+
+      return { ...result, empresa: undefined };
+    }
   })
 );

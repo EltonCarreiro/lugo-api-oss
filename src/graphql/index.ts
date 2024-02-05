@@ -7,6 +7,8 @@ import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 import { useCookies } from '@whatwg-node/server-plugin-cookies';
 import { getRedisClient } from '@/data/redis';
+import { EmpresaUseCases } from '@/useCases/EmpresaUseCases';
+import { PessoaUseCases } from '@/useCases/PessoaUseCases';
 
 export const setup = async (
   jwtConfig: JWTConfig,
@@ -21,6 +23,8 @@ export const setup = async (
   );
   const usuarioUseCases = new UsuarioUseCases();
   const usuarioPessoaUseCases = new UsuarioPessoaUseCases();
+  const pessoaUseCases = new PessoaUseCases();
+  const empresaUseCases = new EmpresaUseCases(pessoaUseCases);
 
   const yoga = createYoga({
     schema: buildSchema(),
@@ -31,7 +35,8 @@ export const setup = async (
         useCases: {
           auth: authUseCases,
           usuario: usuarioUseCases,
-          usuarioPessoa: usuarioPessoaUseCases
+          usuarioPessoa: usuarioPessoaUseCases,
+          empresa: empresaUseCases
         },
         jwt,
         usuarioLogado:
