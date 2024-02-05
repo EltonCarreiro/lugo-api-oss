@@ -8,6 +8,7 @@
     "paths": {
       "@/*": ["*"]
     },
+    "types": ["node", "jest"],
     "resolveJsonModule": true,
     /* Emit */
     "sourceMap": true,

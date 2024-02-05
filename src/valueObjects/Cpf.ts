@@ -8,9 +8,9 @@ export class Cpf {
     const digitsOnlyValue = value.replace(NON_DIGITS_REGEX, '');
 
     if (digitsOnlyValue.length !== 11) {
-      throw new BusinessError('CPF Inválido');
+      throw new BusinessError('CPF Inválido.');
     }
 
-    this.value = value;
+    this.value = digitsOnlyValue;
   }
 }
