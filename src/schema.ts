@@ -18,7 +18,9 @@ export const pessoaRelations = relations(pessoa, ({ one, many }) => ({
 
 export const usuario = schema.table('usuario', {
   id: serial('id').primaryKey(),
-  idPessoa: integer('pessoa_id').references(() => pessoa.id),
+  idPessoa: integer('pessoa_id')
+    .notNull()
+    .references(() => pessoa.id),
   codigo: text('codigo').unique().notNull(),
   email: text('email').notNull(),
   senha: text('senha').notNull()
