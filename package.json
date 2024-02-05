@@ -13,7 +13,8 @@
     "migration:generate": "drizzle-kit generate:pg",
     "migration:push": "drizzle-kit push:pg",
     "migration:run": "tsx ./src/migrate.ts",
-    "test": "jest"
+    "test": "jest --testRegex=\\.test\\.ts$",
+    "test:integration": "jest --testRegex=int\\.test\\.ts$"
   },
   "keywords": [],
   "author": "",
