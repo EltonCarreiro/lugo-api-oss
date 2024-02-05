@@ -8,7 +8,8 @@ export class Pessoa {
     public codigo: string,
     public nome: string,
     public sobrenome: string,
-    cpf: string
+    cpf: string,
+    public codigoEmpresa?: string
   ) {
     if (codigo.length === 0) {
       throw new BusinessError('Código é obrigatório.');
@@ -19,7 +20,11 @@ export class Pessoa {
     }
 
     if (sobrenome.length === 0) {
-      throw new BusinessError('Sobrenome é obrigatório');
+      throw new BusinessError('Sobrenome é obrigatório.');
+    }
+
+    if (codigoEmpresa !== undefined && codigoEmpresa.length === 0) {
+      throw new BusinessError('Código da empresa inválido.');
     }
 
     this.cpf = new Cpf(cpf);
