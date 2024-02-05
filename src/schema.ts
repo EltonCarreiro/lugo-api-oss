@@ -42,7 +42,10 @@ export const pessoa = schema.table(
 );
 
 export const pessoaRelations = relations(pessoa, ({ one, many }) => ({
-  empresa: one(empresa),
+  empresa: one(empresa, {
+    fields: [pessoa.idEmpresa],
+    references: [empresa.id]
+  }),
   usuario: one(usuario),
   imoveis: many(imovel)
 }));
@@ -58,7 +61,10 @@ export const usuario = schema.table('usuario', {
 });
 
 export const usuarioRelations = relations(usuario, ({ one }) => ({
-  pessoa: one(pessoa)
+  pessoa: one(pessoa, {
+    fields: [usuario.idPessoa],
+    references: [pessoa.id]
+  })
 }));
 
 export const imovel = schema.table('imovel', {

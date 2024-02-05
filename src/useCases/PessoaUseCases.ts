@@ -9,6 +9,7 @@ interface CriarPessoaArgs {
   sobrenome: string;
   cpf: string;
   codigoEmpresa: string | undefined;
+  tipoPessoaEmpresa: 'cliente' | 'funcionario';
 }
 
 type AlterarPessoaArgs = Omit<CriarPessoaArgs, 'codigoEmpresa'> & {
@@ -24,11 +25,18 @@ interface CriarAlterarPessoaResult {
 
 export class PessoaUseCases {
   public async criarPessoa(
-    { nome, sobrenome, cpf, codigoEmpresa }: CriarPessoaArgs,
+    { nome, sobrenome, cpf, codigoEmpresa, tipoPessoaEmpresa }: CriarPessoaArgs,
     transaction?: DbTransaction
   ): Promise<CriarAlterarPessoaResult> {
     const codigo = nanoid();
-    const novaPessoa = new Pessoa(codigo, nome, sobrenome, cpf, codigoEmpresa);
+    const novaPessoa = new Pessoa(
+      codigo,
+      nome,
+      sobrenome,
+      cpf,
+      codigoEmpresa,
+      tipoPessoaEmpresa
+    );
 
     if (transaction !== undefined) {
       return this.internalCriarPessoa(novaPessoa, transaction);
@@ -143,7 +151,8 @@ export class PessoaUseCases {
       cpf: novaPessoa.cpf.value,
       nome: novaPessoa.nome,
       sobrenome: novaPessoa.sobrenome,
-      idEmpresa: idEmpresa
+      idEmpresa: idEmpresa,
+      tipo: novaPessoa.tipoPessoaEmpresa
     });
 
     return {

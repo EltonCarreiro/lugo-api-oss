@@ -1,6 +1,7 @@
 import { builder } from './builder';
 import { Usuario } from './usuario';
 
+import './empresa';
 import './authentication';
 import './errors';
 
@@ -11,7 +12,17 @@ export const buildSchema = () => {
         type: Usuario,
         nullable: true,
         resolve: (_parent, _args, ctx) => {
-          return ctx.usuarioLogado;
+          const usuarioLogado = ctx.usuarioLogado;
+
+          if (usuarioLogado === undefined) {
+            return undefined;
+          }
+
+          return {
+            codigo: usuarioLogado.codigo,
+            email: usuarioLogado.email,
+            empresa: undefined
+          };
         }
       })
     })

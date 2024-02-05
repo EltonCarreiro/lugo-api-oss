@@ -4,6 +4,7 @@ import { DbTransaction, db } from '@/data/db';
 import { Senha } from '@/valueObjects/Senha';
 import { usuario } from '@/schema';
 import { nanoid } from 'nanoid';
+import { Empresa } from '@/entities/Empresa';
 
 interface CriarUsuarioArgs {
   codigoPessoa: string;
@@ -21,6 +22,13 @@ interface CriarAlterarUsuarioArgs {
 interface CriarAlterarUsuarioResult {
   codigo: string;
   email: string;
+}
+
+interface EmpresaAssociada {
+  codigo: string;
+  nomeFantasia: string;
+  razaoSocial: string;
+  cnpj: string;
 }
 
 export class UsuarioUseCases {
@@ -82,6 +90,45 @@ export class UsuarioUseCases {
         email: usuarioEncontrado.email
       };
     });
+  }
+
+  public async obterEmpresaAssociada(
+    codigoUsuario: string
+  ): Promise<EmpresaAssociada | undefined> {
+    const usuarioDb = await db.query.usuario.findFirst({
+      with: {
+        pessoa: {
+          with: {
+            empresa: true
+          }
+        }
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoUsuario)
+    });
+
+    if (usuarioDb === undefined) {
+      throw new BusinessError('Usuário não encontrado.');
+    }
+
+    const empresaDb = usuarioDb.pessoa?.empresa ?? undefined;
+
+    if (empresaDb === undefined) {
+      return undefined;
+    }
+
+    const empresaAssociada = new Empresa(
+      empresaDb.codigo,
+      empresaDb.nomeFantasia,
+      empresaDb.razaoSocial,
+      empresaDb.cnpj
+    );
+
+    return {
+      codigo: empresaAssociada.codigo,
+      nomeFantasia: empresaAssociada.nomeFantasia,
+      razaoSocial: empresaAssociada.razaoSocial,
+      cnpj: empresaAssociada.cnpj.value
+    };
   }
 
   private async internalCriarUsuario(
