@@ -8,9 +8,9 @@ export class Cnpj {
     const digitsOnlyValue = value.replace(NON_DIGITS_REGEX, '');
 
     if (digitsOnlyValue.length !== 14) {
-      throw new BusinessError('CNPJ Inválido');
+      throw new BusinessError('CNPJ Inválido.');
     }
 
-    this.value = value;
+    this.value = digitsOnlyValue;
   }
 }

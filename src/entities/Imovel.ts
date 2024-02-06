@@ -1,6 +1,6 @@
 import { BusinessError } from '@/shared/errors/BusinessError';
 
-interface ImovelConstructorArgs {
+export interface ImovelConstructorArgs {
   codigo: string;
   codigoDono: string;
   metrosQuadrados: number | undefined;
@@ -8,6 +8,11 @@ interface ImovelConstructorArgs {
 }
 
 export class Imovel {
+  public codigo: string;
+  public codigoDono: string;
+  public metrosQuadrados: number | undefined;
+  public endereco: string;
+
   public constructor({
     codigo,
     codigoDono,
@@ -27,29 +32,13 @@ export class Imovel {
     }
 
     if (endereco.length === 0) {
-      throw new BusinessError('Endereço obrigatório');
+      throw new BusinessError('Endereço obrigatório.');
     }
 
-    this._codigo = codigo;
-    this._codigoDono = codigoDono;
-    this._metrosQuadrados = metrosQuadrados;
-    this._endereco = endereco;
-  }
-
-  public get codigo() {
-    return this._codigo;
-  }
-
-  public get codigoDono() {
-    return this._codigoDono;
-  }
-
-  public get metrosQuadrados() {
-    return this._metrosQuadrados;
-  }
-
-  public get endereco() {
-    return this._endereco;
+    this.codigo = codigo;
+    this.codigoDono = codigoDono;
+    this.metrosQuadrados = metrosQuadrados;
+    this.endereco = endereco;
   }
 
   public atualizarCadastro(
@@ -61,15 +50,10 @@ export class Imovel {
     }
 
     if (novoEndereco.length === 0) {
-      throw new BusinessError('Endereço obrigatório');
+      throw new BusinessError('Endereço obrigatório.');
     }
 
-    this._metrosQuadrados = novaMetragem;
-    this._endereco = novoEndereco;
+    this.metrosQuadrados = novaMetragem;
+    this.endereco = novoEndereco;
   }
-
-  private _codigo: string;
-  private _codigoDono: string;
-  private _metrosQuadrados: number | undefined;
-  private _endereco: string;
 }

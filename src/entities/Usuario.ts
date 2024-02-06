@@ -1,6 +1,6 @@
 import { BusinessError } from '@/shared/errors/BusinessError';
 
-interface UsuarioConstructorArgs {
+export interface UsuarioConstructorArgs {
   codigo: string;
   email: string;
   senha: string;
@@ -43,7 +43,7 @@ export class Usuario {
 
   public alterarSenha(novaSenha: string, confirmacaoNovaSenha: string) {
     if (novaSenha.length === 0) {
-      throw new BusinessError('Nova senha não pode ser vazia');
+      throw new BusinessError('Senha vazia não permitida.');
     }
 
     if (novaSenha !== confirmacaoNovaSenha) {
