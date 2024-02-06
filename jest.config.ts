@@ -10,6 +10,14 @@ const jestConfig: JestConfigWithTsJest = {
   coverageReporters: ['text', 'html', 'clover', 'lcov', 'json'],
   coverageDirectory: '<rootDir>/coverage',
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      lines: 80,
+      functions: 80,
+      statements: 80
+    }
+  },
   coveragePathIgnorePatterns: [
     '/node_modules/',
     '/src/index.ts',
