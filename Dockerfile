@@ -3,7 +3,7 @@ WORKDIR /app
 EXPOSE 3000
 COPY package*.json ./
 RUN npm ci
-COPY tsconfig.json ./
+COPY tsconfig.json jest.config.ts ./
 COPY ./src ./src
 
 FROM base as dev
