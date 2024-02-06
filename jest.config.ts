@@ -10,7 +10,14 @@ const jestConfig: JestConfigWithTsJest = {
   coverageReporters: ['text', 'html', 'clover', 'lcov', 'json'],
   coverageDirectory: '<rootDir>/coverage',
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
-  coveragePathIgnorePatterns: ['/node_modules/'],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/src/index.ts',
+    '/src/data/*',
+    '/src/graphql/*',
+    '/src/migrate.ts',
+    '/src/schema.ts'
+  ],
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/dist/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
