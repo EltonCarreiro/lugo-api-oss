@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 
 export type TipoAnuncio = 'locacao' | 'venda';
 
-interface AnuncioConstructorArgs {
+export interface AnuncioConstructorArgs {
   codigo: string;
   codigoImovel: string;
   valor: BigNumber;
@@ -41,7 +41,7 @@ export class Anuncio {
       throw new BusinessError('Valor do condomínio inválido.');
     }
 
-    if (valorIPTU.isGreaterThanOrEqualTo(0)) {
+    if (valorIPTU.isLessThanOrEqualTo(0)) {
       throw new BusinessError('Valor do IPTU inválido.');
     }
 
@@ -85,7 +85,7 @@ export class Anuncio {
       throw new BusinessError('Valor do condomínio inválido.');
     }
 
-    if (valorIPTU.isGreaterThanOrEqualTo(0)) {
+    if (valorIPTU.isLessThanOrEqualTo(0)) {
       throw new BusinessError('Valor do IPTU inválido.');
     }
 
