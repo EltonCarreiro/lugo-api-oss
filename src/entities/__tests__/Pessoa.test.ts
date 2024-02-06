@@ -37,7 +37,7 @@ describe('Pessoa testes', () => {
       expect(pessoa.cpf.value).toBe(args.cpf);
       expect(pessoa.nome).toBe(args.nome);
       expect(pessoa.sobrenome).toBe(args.sobrenome);
-      expect(pessoa.tipoPessoaEmpresa).toBe(undefined);
+      expect(pessoa.tipoPessoaEmpresa).toBe('cliente');
     });
   });
 });
