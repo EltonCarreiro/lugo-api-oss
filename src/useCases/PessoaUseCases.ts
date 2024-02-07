@@ -2,9 +2,9 @@ import { DbTransaction, db } from '@/data/db';
 import { Pessoa } from '../entities/Pessoa';
 import { nanoid } from 'nanoid';
 import { BusinessError } from '@/shared/errors/BusinessError';
-import { pessoa } from 'schema';
+import { pessoa as pessoaTable } from '@/schema';
 
-interface CriarPessoaArgs {
+export interface CriarPessoaArgs {
   nome: string;
   sobrenome: string;
   cpf: string;
@@ -12,15 +12,20 @@ interface CriarPessoaArgs {
   tipoPessoaEmpresa: 'cliente' | 'funcionario';
 }
 
-type AlterarPessoaArgs = Omit<CriarPessoaArgs, 'codigoEmpresa'> & {
-  codigo: string;
-};
-
-interface CriarAlterarPessoaResult {
+export interface AlterarPessoaArgs {
   codigo: string;
   nome: string;
   sobrenome: string;
   cpf: string;
+}
+
+interface CriarAlterarPessoaResult {
+  codigo: string;
+  codigoEmpresa: string | undefined;
+  nome: string;
+  sobrenome: string;
+  cpf: string;
+  tipoPessoaEmpresa: 'cliente' | 'funcionario';
 }
 
 export class PessoaUseCases {
@@ -54,35 +59,41 @@ export class PessoaUseCases {
     nome,
     sobrenome
   }: AlterarPessoaArgs): Promise<CriarAlterarPessoaResult> {
-    const pessoaAtualizada = new Pessoa(codigo, nome, sobrenome, cpf);
-
     return await db.transaction(
       async (trx): Promise<CriarAlterarPessoaResult> => {
-        const pessoaExistente = await trx.query.pessoa.findFirst({
-          columns: {
-            cpf: true,
-            idEmpresa: true
+        const pessoaExistenteDb = await trx.query.pessoa.findFirst({
+          with: {
+            empresa: true
           },
-          where: ({ codigo }, { eq }) => eq(codigo, pessoaAtualizada.codigo)
+          where: ({ codigo: codigoPessoaExistente }, { eq }) =>
+            eq(codigoPessoaExistente, codigo)
         });
 
-        if (pessoaExistente === undefined) {
+        if (pessoaExistenteDb === undefined) {
           throw new BusinessError('Pessoa não encontrada.');
         }
 
-        const idEmpresaExistente = pessoaExistente.idEmpresa ?? undefined;
+        const pessoa = new Pessoa(
+          pessoaExistenteDb.codigo,
+          pessoaExistenteDb.nome,
+          pessoaExistenteDb.sobrenome,
+          pessoaExistenteDb.cpf,
+          pessoaExistenteDb.empresa?.codigo ?? undefined,
+          pessoaExistenteDb.tipo ?? undefined
+        );
 
-        if (cpf !== pessoaExistente.cpf) {
+        pessoa.alterarDados({ nome, sobrenome, cpf });
+
+        const idEmpresaExistente = pessoaExistenteDb.idEmpresa ?? undefined;
+
+        if (cpf !== pessoaExistenteDb.cpf) {
           const pessoaExistentePorCpf = await trx.query.pessoa.findFirst({
             columns: {
               cpf: true,
               idEmpresa: true
             },
             where: ({ cpf: cpfPessoaExistente, idEmpresa }, { eq, and }) => {
-              const comparacaoCpf = eq(
-                cpfPessoaExistente,
-                pessoaAtualizada.cpf.value
-              );
+              const comparacaoCpf = eq(cpfPessoaExistente, pessoa.cpf.value);
 
               if (idEmpresaExistente !== undefined) {
                 return and(comparacaoCpf, eq(idEmpresa, idEmpresaExistente));
@@ -97,17 +108,19 @@ export class PessoaUseCases {
           }
         }
 
-        await trx.update(pessoa).set({
-          cpf: pessoaAtualizada.cpf.value,
-          nome: pessoaAtualizada.nome,
-          sobrenome: pessoaAtualizada.sobrenome
+        await trx.update(pessoaTable).set({
+          cpf: pessoa.cpf.value,
+          nome: pessoa.nome,
+          sobrenome: pessoa.sobrenome
         });
 
         return {
-          codigo: pessoaAtualizada.codigo,
-          cpf: pessoaAtualizada.cpf.value,
-          nome: pessoaAtualizada.nome,
-          sobrenome: pessoaAtualizada.sobrenome
+          codigo: pessoa.codigo,
+          codigoEmpresa: pessoa.codigoEmpresa,
+          cpf: pessoa.cpf.value,
+          nome: pessoa.nome,
+          sobrenome: pessoa.sobrenome,
+          tipoPessoaEmpresa: pessoa.tipoPessoaEmpresa
         };
       }
     );
@@ -140,13 +153,13 @@ export class PessoaUseCases {
       });
 
       if (empresa === undefined) {
-        throw new BusinessError('Empresa informada não encontrada');
+        throw new BusinessError('Empresa informada não encontrada.');
       }
 
       idEmpresa = empresa.id;
     }
 
-    await trx.insert(pessoa).values({
+    await trx.insert(pessoaTable).values({
       codigo: novaPessoa.codigo,
       cpf: novaPessoa.cpf.value,
       nome: novaPessoa.nome,
@@ -157,9 +170,11 @@ export class PessoaUseCases {
 
     return {
       codigo: novaPessoa.codigo,
+      codigoEmpresa: novaPessoa.codigoEmpresa,
       cpf: novaPessoa.cpf.value,
       nome: novaPessoa.nome,
-      sobrenome: novaPessoa.sobrenome
+      sobrenome: novaPessoa.sobrenome,
+      tipoPessoaEmpresa: novaPessoa.tipoPessoaEmpresa
     };
   }
 }

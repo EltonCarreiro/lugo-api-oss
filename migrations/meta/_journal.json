@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1706752592605,
-      "tag": "0000_nebulous_virginia_dare",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1707146759184,
-      "tag": "0001_magenta_screwball",
+      "when": 1707280137374,
+      "tag": "0000_peaceful_madripoor",
       "breakpoints": true
     }
   ]

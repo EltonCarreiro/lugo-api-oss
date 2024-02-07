@@ -1,5 +1,5 @@
 {
-  "id": "c83d76cb-d97d-4ae2-9e98-4fc89367f1c0",
+  "id": "8306cc07-7e44-427d-96e6-24625edb3f94",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -59,6 +59,61 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "empresa": {
+      "name": "empresa",
+      "schema": "lugo",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome_fantasia": {
+          "name": "nome_fantasia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "razao_social": {
+          "name": "razao_social",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "empresa_codigo_unique": {
+          "name": "empresa_codigo_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "codigo"
+          ]
+        },
+        "empresa_cnpj_unique": {
+          "name": "empresa_cnpj_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "cnpj"
+          ]
+        }
+      }
+    },
     "imovel": {
       "name": "imovel",
       "schema": "lugo",
@@ -79,7 +134,7 @@
           "name": "codigo",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "metros_quadrados": {
           "name": "metros_quadrados",
@@ -91,7 +146,7 @@
           "name": "endereco",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {},
@@ -112,7 +167,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "imovel_codigo_unique": {
+          "name": "imovel_codigo_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "codigo"
+          ]
+        }
+      }
     },
     "pessoa": {
       "name": "pessoa",
@@ -129,6 +192,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "empresa_id": {
+          "name": "empresa_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "nome": {
           "name": "nome",
@@ -147,10 +216,31 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_pessoa",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "pessoa_empresa_id_empresa_id_fk": {
+          "name": "pessoa_empresa_id_empresa_id_fk",
+          "tableFrom": "pessoa",
+          "tableTo": "empresa",
+          "schemaTo": "lugo",
+          "columnsFrom": [
+            "empresa_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "pessoa_codigo_unique": {
@@ -158,13 +248,6 @@
           "nullsNotDistinct": false,
           "columns": [
             "codigo"
-          ]
-        },
-        "pessoa_cpf_unique": {
-          "name": "pessoa_cpf_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "cpf"
           ]
         }
       }
@@ -183,7 +266,7 @@
           "name": "pessoa_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "codigo": {
           "name": "codigo",
@@ -233,7 +316,15 @@
       }
     }
   },
-  "enums": {},
+  "enums": {
+    "tipo_pessoa": {
+      "name": "tipo_pessoa",
+      "values": {
+        "funcionario": "funcionario",
+        "cliente": "cliente"
+      }
+    }
+  },
   "schemas": {
     "lugo": "lugo"
   },
