@@ -1,10 +1,10 @@
 import { db } from '@/data/db';
 import { PessoaUseCases } from '../PessoaUseCases';
-import { empresa as empresaTable, pessoa as pessoaTable } from '@/schema';
+import { MockData, cleanupData, setupData } from './utils';
 
 describe('PessoaUseCases testes', () => {
   const pessoaUseCases = new PessoaUseCases();
-  let mockData: Awaited<ReturnType<typeof setupData>>;
+  let mockData: MockData;
 
   beforeEach(async () => {
     mockData = await setupData();
@@ -15,7 +15,7 @@ describe('PessoaUseCases testes', () => {
   });
 
   describe('ao criar pessoa', () => {
-    it('não deve permitir cadastrar com mesmo CPF', () => {
+    it('não deve permitir cadastrar com mesmo CPF e mesma empresa', () => {
       expect(
         pessoaUseCases.criarPessoa({
           codigoEmpresa: mockData.empresa.codigo,
@@ -25,6 +25,25 @@ describe('PessoaUseCases testes', () => {
           tipoPessoaEmpresa: 'cliente'
         })
       ).rejects.toThrow('Pessoa já cadastrada com o CPF informado.');
+    });
+
+    it('deve permitir cadastrar com mesmo CPF porém sem empresa ou de empresa diferente', async () => {
+      const insertPessoaResult = await pessoaUseCases.criarPessoa({
+        codigoEmpresa: undefined,
+        cpf: mockData.pessoa.cpf,
+        nome: 'peter',
+        sobrenome: 'parker',
+        tipoPessoaEmpresa: 'cliente'
+      });
+
+      const queryResult = await db.query.pessoa.findFirst({
+        where: ({ codigo }, { eq }) => eq(codigo, insertPessoaResult.codigo)
+      });
+
+      expect(insertPessoaResult.codigo).toBe(queryResult?.codigo);
+      expect(insertPessoaResult.cpf).toBe(queryResult?.cpf);
+      expect(insertPessoaResult.nome).toBe(queryResult?.nome);
+      expect(insertPessoaResult.sobrenome).toBe(queryResult?.sobrenome);
     });
 
     it('não deve permitir cadastrar caso empresa informada não seja encontrada', () => {
@@ -71,7 +90,7 @@ describe('PessoaUseCases testes', () => {
       ).rejects.toThrow('Pessoa não encontrada.');
     });
 
-    it('não deve permitir alterar para um cpf já utilizado', () => {
+    it('não deve permitir alterar para um cpf já utilizado por alguém da mesma empresa', () => {
       expect(
         pessoaUseCases.alterarPessoa({
           codigo: mockData.pessoa.codigo,
@@ -80,6 +99,24 @@ describe('PessoaUseCases testes', () => {
           sobrenome: 'parker'
         })
       ).rejects.toThrow('CPF já utilizado.');
+    });
+
+    it('deve permitir alterar mesmo com CPF utilizado por alguém de empresa diferente', async () => {
+      await pessoaUseCases.alterarPessoa({
+        codigo: mockData.pessoaSemEmpresa.codigo,
+        cpf: mockData.pessoa2.cpf,
+        nome: 'peter',
+        sobrenome: 'parker'
+      });
+
+      const pessoaDb = await db.query.pessoa.findFirst({
+        where: ({ codigo }, { eq }) =>
+          eq(codigo, mockData.pessoaSemEmpresa.codigo)
+      });
+
+      expect(pessoaDb?.cpf).toBe(mockData.pessoa2.cpf);
+      expect(pessoaDb?.nome).toBe('peter');
+      expect(pessoaDb?.sobrenome).toBe('parker');
     });
 
     it('deve alterar dados com sucesso', async () => {
@@ -99,71 +136,4 @@ describe('PessoaUseCases testes', () => {
       expect(pessoaDb?.sobrenome).toBe('parker_edited');
     });
   });
-
-  describe('e utilizar transaction externa', () => {});
 });
-
-const setupData = async () => {
-  await cleanupData();
-  return db.transaction(async (trx) => {
-    const empresa: typeof empresaTable.$inferInsert = {
-      cnpj: '12345678000100',
-      codigo: 'empresa_fake_1',
-      nomeFantasia: 'nome_fantasia',
-      razaoSocial: 'razao_social'
-    };
-
-    const empresaInsertResult = await trx
-      .insert(empresaTable)
-      .values(empresa)
-      .returning({ id: empresaTable.id });
-
-    const idEmpresa = empresaInsertResult[0]?.id;
-
-    const pessoa: typeof pessoaTable.$inferInsert = {
-      codigo: 'fake_pessoa_1',
-      idEmpresa,
-      cpf: '11111111111',
-      nome: 'john',
-      sobrenome: 'doe',
-      tipo: 'funcionario'
-    };
-
-    const pessoaInsertResult = await trx
-      .insert(pessoaTable)
-      .values(pessoa)
-      .returning({ id: pessoaTable.id });
-
-    const idPessoa = pessoaInsertResult[0]?.id;
-
-    const pessoa2: typeof pessoaTable.$inferInsert = {
-      codigo: 'fake_pessoa_2',
-      idEmpresa,
-      cpf: '11111111112',
-      nome: 'john',
-      sobrenome: 'doe',
-      tipo: 'funcionario'
-    };
-
-    const pessoaInsertResult2 = await trx
-      .insert(pessoaTable)
-      .values(pessoa2)
-      .returning({ id: pessoaTable.id });
-
-    const idPessoa2 = pessoaInsertResult2[0]?.id;
-
-    return {
-      empresa: { ...empresa, id: idEmpresa },
-      pessoa: { ...pessoa, id: idPessoa },
-      pessoa2: { ...pessoa2, id: idPessoa2 }
-    };
-  });
-};
-
-const cleanupData = () => {
-  console.log('Cleaning up data...');
-  return db.transaction(async (trx) => {
-    await trx.delete(pessoaTable);
-    await trx.delete(empresaTable);
-  });
-};

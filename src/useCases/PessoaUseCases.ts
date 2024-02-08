@@ -92,14 +92,17 @@ export class PessoaUseCases {
               cpf: true,
               idEmpresa: true
             },
-            where: ({ cpf: cpfPessoaExistente, idEmpresa }, { eq, and }) => {
+            where: (
+              { cpf: cpfPessoaExistente, idEmpresa },
+              { eq, and, isNull }
+            ) => {
               const comparacaoCpf = eq(cpfPessoaExistente, pessoa.cpf.value);
 
               if (idEmpresaExistente !== undefined) {
                 return and(comparacaoCpf, eq(idEmpresa, idEmpresaExistente));
               }
 
-              return comparacaoCpf;
+              return and(comparacaoCpf, isNull(idEmpresa));
             }
           });
 
@@ -134,10 +137,20 @@ export class PessoaUseCases {
       columns: {
         cpf: true
       },
+      with: {
+        empresa: {
+          columns: {
+            codigo: true
+          }
+        }
+      },
       where: ({ cpf }, { eq }) => eq(cpf, novaPessoa.cpf.value)
     });
 
-    if (pessoaExistente !== undefined) {
+    if (
+      pessoaExistente !== undefined &&
+      pessoaExistente.empresa?.codigo === novaPessoa.codigoEmpresa
+    ) {
       throw new BusinessError('Pessoa já cadastrada com o CPF informado.');
     }
 
