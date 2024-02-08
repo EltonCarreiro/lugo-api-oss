@@ -70,7 +70,7 @@ export class UsuarioUseCases {
       });
 
       if (usuarioDb === undefined) {
-        throw new BusinessError('Usuário não encontrado');
+        throw new BusinessError('Usuário não encontrado.');
       }
 
       const usuarioEncontrado = new Usuario({
@@ -145,7 +145,7 @@ export class UsuarioUseCases {
     });
 
     if (pessoaExistente === undefined) {
-      throw new BusinessError('Pessoa não encontrada');
+      throw new BusinessError('Pessoa não encontrada.');
     }
 
     const usuarioExistente = await trx.query.usuario.findFirst({
