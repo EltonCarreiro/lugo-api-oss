@@ -71,7 +71,10 @@ export const imovel = schema.table('imovel', {
 });
 
 export const imovelRelations = relations(imovel, ({ one }) => ({
-  dono: one(pessoa),
+  dono: one(pessoa, {
+    fields: [imovel.idDono],
+    references: [pessoa.id]
+  }),
   anuncio: one(anuncio)
 }));
 
