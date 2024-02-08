@@ -1,9 +1,11 @@
-import { db } from '@/data/db';
+import { DbTransaction, db } from '@/data/db';
 import {
   empresa as empresaTable,
+  imovel as imovelTable,
   pessoa as pessoaTable,
   usuario as usuarioTable
 } from '@/schema';
+import { customAlphabet, nanoid } from 'nanoid';
 
 export type MockData = Awaited<ReturnType<typeof setupData>>;
 
@@ -24,97 +26,153 @@ export const setupData = async () => {
 
     const idEmpresa = empresaInsertResult[0]?.id;
 
-    const pessoa: typeof pessoaTable.$inferInsert = {
-      codigo: 'fake_pessoa_1',
-      idEmpresa,
-      cpf: '11111111111',
-      nome: 'john',
-      sobrenome: 'doe',
-      tipo: 'funcionario'
+    const empresa2: typeof empresaTable.$inferInsert = {
+      cnpj: '12345678000101',
+      codigo: 'empresa_fake_2',
+      nomeFantasia: 'nome_fantasia_2',
+      razaoSocial: 'razao_social_2'
     };
 
-    const pessoaInsertResult = await trx
-      .insert(pessoaTable)
-      .values(pessoa)
-      .returning({ id: pessoaTable.id });
+    const empresa2InsertResult = await trx
+      .insert(empresaTable)
+      .values(empresa2)
+      .returning({ id: empresaTable.id });
 
-    const idPessoa = pessoaInsertResult[0]?.id;
+    const idEmpresa2 = empresa2InsertResult[0]?.id;
 
-    const pessoa2: typeof pessoaTable.$inferInsert = {
-      codigo: 'fake_pessoa_2',
-      idEmpresa,
-      cpf: '11111111112',
-      nome: 'john',
-      sobrenome: 'doe',
-      tipo: 'funcionario'
+    const result = {
+      empresas: [
+        {
+          ...empresa,
+          id: idEmpresa,
+          pessoas: [
+            await criarPessoa(
+              {
+                idEmpresa,
+                tipo: 'funcionario',
+                includeUser: true
+              },
+              trx
+            ),
+            await criarPessoa(
+              {
+                idEmpresa,
+                tipo: 'funcionario',
+                includeUser: false
+              },
+              trx
+            ),
+            await criarPessoa(
+              {
+                idEmpresa,
+                tipo: 'funcionario',
+                includeUser: true
+              },
+              trx
+            ),
+            await criarPessoa(
+              {
+                idEmpresa,
+                tipo: 'cliente',
+                includeUser: true
+              },
+              trx
+            )
+          ]
+        },
+        {
+          ...empresa2,
+          id: idEmpresa2,
+          pessoas: [
+            await criarPessoa(
+              {
+                idEmpresa: idEmpresa2,
+                tipo: 'funcionario',
+                includeUser: true
+              },
+              trx
+            )
+          ]
+        }
+      ],
+      pessoas: [
+        await criarPessoa(
+          {
+            idEmpresa: undefined,
+            tipo: 'cliente',
+            includeUser: true
+          },
+          trx
+        )
+      ]
     };
 
-    const pessoaInsertResult2 = await trx
-      .insert(pessoaTable)
-      .values(pessoa2)
-      .returning({ id: pessoaTable.id });
-
-    const idPessoa2 = pessoaInsertResult2[0]?.id;
-
-    const pessoaSemEmpresa: typeof pessoaTable.$inferInsert = {
-      codigo: 'fake_pessoa_3',
-      idEmpresa: undefined,
-      cpf: '11111111113',
-      nome: 'John (sem empresa)',
-      sobrenome: 'Doe (sem empresa)',
-      tipo: 'funcionario'
-    };
-
-    const pessoaSemEmpresaResult = await trx
-      .insert(pessoaTable)
-      .values(pessoaSemEmpresa)
-      .returning({ id: pessoaTable.id });
-
-    const idPessoaSemEmpresa = pessoaSemEmpresaResult[0]?.id;
-
-    const pessoaUsuario: typeof usuarioTable.$inferInsert = {
-      idPessoa: idPessoa,
-      codigo: 'fake_pessoa_1_usuario',
-      email: 'fake_pessoa_1@mail.com',
-      senha: 'passw0rd'
-    };
-
-    const usuarioResult = await trx
-      .insert(usuarioTable)
-      .values(pessoaUsuario)
-      .returning({ id: usuarioTable.id });
-
-    const idUsuario = usuarioResult[0]?.id;
-
-    const usuarioSemEmpresa: typeof usuarioTable.$inferInsert = {
-      idPessoa: idPessoaSemEmpresa,
-      codigo: 'fake_pessoa_3_usuario',
-      email: 'fake_pessoa_3@mail.com',
-      senha: 'passw0rd'
-    };
-
-    const usuarioSemEmpresaResult = await trx
-      .insert(usuarioTable)
-      .values(usuarioSemEmpresa)
-      .returning({ id: usuarioTable.id });
-
-    const idUsuarioSemEmpresa = usuarioSemEmpresaResult[0]?.id;
-
-    return {
-      empresa: { ...empresa, id: idEmpresa },
-      usuario: { ...pessoaUsuario, id: idUsuario },
-      pessoa: { ...pessoa, id: idPessoa },
-      pessoa2: { ...pessoa2, id: idPessoa2 },
-      pessoaSemEmpresa: { ...pessoaSemEmpresa, id: idPessoaSemEmpresa },
-      usuarioSemEmpresa: { ...usuarioSemEmpresa, id: idUsuarioSemEmpresa }
-    };
+    return result;
   });
 };
 
 export const cleanupData = () => {
   return db.transaction(async (trx) => {
     await trx.delete(usuarioTable);
+    await trx.delete(imovelTable);
     await trx.delete(pessoaTable);
     await trx.delete(empresaTable);
   });
 };
+
+const criarPessoa = async (
+  {
+    idEmpresa,
+    tipo,
+    includeUser = false
+  }: {
+    idEmpresa?: number;
+    tipo: 'cliente' | 'funcionario';
+    includeUser?: boolean;
+  },
+  trx: DbTransaction
+) => {
+  const pessoa: typeof pessoaTable.$inferInsert = {
+    codigo: nanoid(),
+    idEmpresa,
+    cpf: gerarCpf(),
+    nome: nanoid(),
+    sobrenome: nanoid(),
+    tipo
+  };
+
+  const pessoaInsertResult = await trx
+    .insert(pessoaTable)
+    .values(pessoa)
+    .returning({ id: pessoaTable.id });
+
+  const idPessoa = pessoaInsertResult[0]?.id;
+
+  let usuarioRes:
+    | (typeof usuarioTable.$inferInsert & { id: number })
+    | undefined;
+
+  if (includeUser) {
+    const usuario: typeof usuarioTable.$inferInsert = {
+      idPessoa: idPessoa,
+      codigo: nanoid(),
+      email: `${nanoid()}@mail.com`,
+      senha: 'passw0rd'
+    };
+
+    const usuarioInsertResult = await trx
+      .insert(usuarioTable)
+      .values(usuario)
+      .returning({ id: usuarioTable.id });
+
+    const idUsuario = usuarioInsertResult[0]?.id;
+
+    usuarioRes = { ...usuario, id: idUsuario };
+  }
+
+  const result = { ...pessoa, id: idPessoa, usuario: usuarioRes };
+
+  return result;
+};
+
+const gerarCpf = () => customAlphabet('0123456789', 11)(11);

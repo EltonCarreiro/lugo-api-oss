@@ -28,9 +28,11 @@ describe('Usuario use cases testes', () => {
     });
 
     it('não deve criar usuário caso a pessoa já possua usuário cadastrado.', () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
       expect(
         usuarioUseCases.criarUsuario({
-          codigoPessoa: mockData.pessoa.codigo,
+          codigoPessoa: pessoa.codigo,
           email: 'new@mail.com',
           senha: '123',
           confirmacaoSenha: '123'
@@ -38,11 +40,15 @@ describe('Usuario use cases testes', () => {
       ).rejects.toThrow('Pessoa já possui usuário cadastrado.');
     });
 
-    it('não deve criar usuário caso a email já esteja sendo utilizado (da mesma empresa ou n˜åo).', () => {
+    it('não deve criar usuário caso a email já esteja sendo utilizado (da mesma empresa ou não).', () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+      const pessoa2 = mockData.empresas[0].pessoas[1];
+      const pessoaSemEmpresa = mockData.pessoas[0];
+
       expect(
         usuarioUseCases.criarUsuario({
-          codigoPessoa: mockData.pessoa2.codigo,
-          email: mockData.usuario.email,
+          codigoPessoa: pessoa2.codigo,
+          email: pessoa.usuario?.email ?? '',
           senha: '123',
           confirmacaoSenha: '123'
         })
@@ -50,8 +56,8 @@ describe('Usuario use cases testes', () => {
 
       expect(
         usuarioUseCases.criarUsuario({
-          codigoPessoa: mockData.pessoaSemEmpresa.codigo,
-          email: mockData.usuario.email,
+          codigoPessoa: pessoa2.codigo,
+          email: pessoaSemEmpresa.usuario?.email ?? '',
           senha: '123',
           confirmacaoSenha: '123'
         })
@@ -61,9 +67,11 @@ describe('Usuario use cases testes', () => {
 
   describe('ao alterar senha', () => {
     it('não deve permitir alterar senha caso as novas senhas não coincidam.', () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
       expect(() =>
         usuarioUseCases.alterarSenha({
-          email: mockData.usuario.email,
+          email: pessoa.usuario?.email ?? '',
           senha: '12',
           confirmacaoSenha: '1'
         })
@@ -81,14 +89,16 @@ describe('Usuario use cases testes', () => {
     });
 
     it('deve alterar senha corretamente.', async () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
       const result = await usuarioUseCases.alterarSenha({
-        email: mockData.usuario.email,
+        email: pessoa.usuario?.email ?? '',
         senha: 'new_passw0rd',
         confirmacaoSenha: 'new_passw0rd'
       });
 
       const queryResult = await db.query.usuario.findFirst({
-        where: ({ codigo }, { eq }) => eq(codigo, mockData.usuario.codigo)
+        where: ({ codigo }, { eq }) => eq(codigo, pessoa.usuario?.codigo ?? '')
       });
 
       expect(queryResult?.codigo).toBe(result.codigo);
@@ -106,24 +116,26 @@ describe('Usuario use cases testes', () => {
     });
 
     it('deve retornar undefined caso usuário não possua empresa associada.', async () => {
+      const pessoaSemEmpresa = mockData.pessoas[0];
       const empresaAssociada = await usuarioUseCases.obterEmpresaAssociada(
-        mockData.usuarioSemEmpresa.codigo
+        pessoaSemEmpresa.usuario?.codigo ?? ''
       );
 
       expect(empresaAssociada).toBeUndefined();
     });
 
     it('deve retornar empresa associada corretamente.', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+
       const empresaAssociada = await usuarioUseCases.obterEmpresaAssociada(
-        mockData.usuario.codigo
+        pessoa.usuario?.codigo ?? ''
       );
 
-      expect(empresaAssociada?.cnpj).toBe(mockData.empresa.cnpj);
-      expect(empresaAssociada?.codigo).toBe(mockData.empresa.codigo);
-      expect(empresaAssociada?.nomeFantasia).toBe(
-        mockData.empresa.nomeFantasia
-      );
-      expect(empresaAssociada?.razaoSocial).toBe(mockData.empresa.razaoSocial);
+      expect(empresaAssociada?.cnpj).toBe(empresa.cnpj);
+      expect(empresaAssociada?.codigo).toBe(empresa.codigo);
+      expect(empresaAssociada?.nomeFantasia).toBe(empresa.nomeFantasia);
+      expect(empresaAssociada?.razaoSocial).toBe(empresa.razaoSocial);
     });
   });
 });

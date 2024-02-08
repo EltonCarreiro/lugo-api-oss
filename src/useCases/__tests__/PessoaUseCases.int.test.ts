@@ -16,10 +16,13 @@ describe('PessoaUseCases testes', () => {
 
   describe('ao criar pessoa', () => {
     it('não deve permitir cadastrar com mesmo CPF e mesma empresa', () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+
       expect(
         pessoaUseCases.criarPessoa({
-          codigoEmpresa: mockData.empresa.codigo,
-          cpf: mockData.pessoa.cpf,
+          codigoEmpresa: empresa.codigo,
+          cpf: pessoa.cpf,
           nome: 'peter',
           sobrenome: 'parker',
           tipoPessoaEmpresa: 'cliente'
@@ -28,9 +31,11 @@ describe('PessoaUseCases testes', () => {
     });
 
     it('deve permitir cadastrar com mesmo CPF porém sem empresa ou de empresa diferente', async () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
       const insertPessoaResult = await pessoaUseCases.criarPessoa({
         codigoEmpresa: undefined,
-        cpf: mockData.pessoa.cpf,
+        cpf: pessoa.cpf,
         nome: 'peter',
         sobrenome: 'parker',
         tipoPessoaEmpresa: 'cliente'
@@ -59,8 +64,10 @@ describe('PessoaUseCases testes', () => {
     });
 
     it('deve cadastrar com dados corretos', async () => {
+      const empresa = mockData.empresas[0];
+
       const insertPessoaResult = await pessoaUseCases.criarPessoa({
-        codigoEmpresa: mockData.empresa.codigo,
+        codigoEmpresa: empresa.codigo,
         cpf: '12345678901',
         nome: 'peter',
         sobrenome: 'parker',
@@ -91,10 +98,14 @@ describe('PessoaUseCases testes', () => {
     });
 
     it('não deve permitir alterar para um cpf já utilizado por alguém da mesma empresa', () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+      const pessoa2 = empresa.pessoas[1];
+
       expect(
         pessoaUseCases.alterarPessoa({
-          codigo: mockData.pessoa.codigo,
-          cpf: mockData.pessoa2.cpf,
+          codigo: pessoa.codigo,
+          cpf: pessoa2.cpf,
           nome: 'peter',
           sobrenome: 'parker'
         })
@@ -102,33 +113,39 @@ describe('PessoaUseCases testes', () => {
     });
 
     it('deve permitir alterar mesmo com CPF utilizado por alguém de empresa diferente', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa2 = empresa.pessoas[1];
+
+      const pessoaSemEmpresa = mockData.pessoas[0];
+
       await pessoaUseCases.alterarPessoa({
-        codigo: mockData.pessoaSemEmpresa.codigo,
-        cpf: mockData.pessoa2.cpf,
+        codigo: pessoaSemEmpresa.codigo,
+        cpf: pessoa2.cpf,
         nome: 'peter',
         sobrenome: 'parker'
       });
 
       const pessoaDb = await db.query.pessoa.findFirst({
-        where: ({ codigo }, { eq }) =>
-          eq(codigo, mockData.pessoaSemEmpresa.codigo)
+        where: ({ codigo }, { eq }) => eq(codigo, pessoaSemEmpresa.codigo)
       });
 
-      expect(pessoaDb?.cpf).toBe(mockData.pessoa2.cpf);
+      expect(pessoaDb?.cpf).toBe(pessoa2.cpf);
       expect(pessoaDb?.nome).toBe('peter');
       expect(pessoaDb?.sobrenome).toBe('parker');
     });
 
     it('deve alterar dados com sucesso', async () => {
+      const pessoa = mockData.pessoas[0];
+
       await pessoaUseCases.alterarPessoa({
-        codigo: mockData.pessoa.codigo,
+        codigo: pessoa.codigo,
         cpf: '12345678901',
         nome: 'peter_edited',
         sobrenome: 'parker_edited'
       });
 
       const pessoaDb = await db.query.pessoa.findFirst({
-        where: ({ codigo }, { eq }) => eq(codigo, mockData.pessoa.codigo)
+        where: ({ codigo }, { eq }) => eq(codigo, pessoa.codigo)
       });
 
       expect(pessoaDb?.cpf).toBe('12345678901');
