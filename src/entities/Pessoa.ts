@@ -3,6 +3,12 @@ import { BusinessError } from '@/shared/errors/BusinessError';
 
 export type TipoPessoaEmpresa = 'funcionario' | 'cliente';
 
+interface AlterarDadosArgs {
+  nome: string;
+  sobrenome: string;
+  cpf: string;
+}
+
 export class Pessoa {
   public cpf: Cpf;
 
@@ -30,6 +36,20 @@ export class Pessoa {
       throw new BusinessError('Código da empresa inválido.');
     }
 
+    this.cpf = new Cpf(cpf);
+  }
+
+  public alterarDados({ nome, sobrenome, cpf }: AlterarDadosArgs) {
+    if (nome.length === 0) {
+      throw new BusinessError('Nome é obrigatório.');
+    }
+
+    if (sobrenome.length === 0) {
+      throw new BusinessError('Sobrenome é obrigatório.');
+    }
+
+    this.nome = nome;
+    this.sobrenome = sobrenome;
     this.cpf = new Cpf(cpf);
   }
 }
