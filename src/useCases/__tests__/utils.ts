@@ -6,6 +6,7 @@ import {
   pessoa as pessoaTable,
   usuario as usuarioTable
 } from '@/schema';
+import { Senha } from '@/valueObjects/Senha';
 import { customAlphabet, nanoid } from 'nanoid';
 
 export type MockData = Awaited<ReturnType<typeof setupData>>;
@@ -164,7 +165,7 @@ const criarPessoa = async (
 
     const usuarioInsertResult = await trx
       .insert(usuarioTable)
-      .values(usuario)
+      .values({ ...usuario, senha: new Senha(usuario.senha).value })
       .returning({ id: usuarioTable.id });
 
     const idUsuario = usuarioInsertResult[0]?.id;
