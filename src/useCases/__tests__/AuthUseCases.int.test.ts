@@ -1,6 +1,7 @@
 import { getRedisClient } from '@/data/redis';
 import { AuthUseCases } from '../AuthUseCases';
 import { MockData, setupData } from './utils';
+import { sql } from '@/data/db';
 
 describe('Auth use cases testes', () => {
   let authUseCases: AuthUseCases;
@@ -16,6 +17,12 @@ describe('Auth use cases testes', () => {
       1,
       redis
     );
+  });
+
+  afterAll(async () => {
+    await sql.end();
+    const redis = await getRedisClient();
+    await redis.quit();
   });
 
   beforeEach(async () => {

@@ -4,7 +4,7 @@ import * as schema from '@/schema';
 import { PgTransaction } from 'drizzle-orm/pg-core';
 import { ExtractTablesWithRelations } from 'drizzle-orm';
 
-const sql = postgres(process.env.DATABASE_URL ?? '');
+export const sql = postgres(process.env.DATABASE_URL ?? '');
 
 export const db = drizzle(sql, { schema });
 
