@@ -175,4 +175,5 @@ const criarPessoa = async (
   return result;
 };
 
-const gerarCpf = () => customAlphabet('0123456789', 11)(11);
+export const gerarCpf = () => customAlphabet('0123456789', 11)(11);
+export const gerarCnpj = () => customAlphabet('0123456789', 14)(14);

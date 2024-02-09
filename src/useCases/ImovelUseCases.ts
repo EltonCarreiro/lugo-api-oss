@@ -3,6 +3,7 @@ import { Imovel } from '../entities/Imovel';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { db } from '@/data/db';
 import { imovel } from '@/schema';
+import { eq } from 'drizzle-orm';
 
 interface CriarImovelArgs {
   metrosQuadrados: number;
@@ -152,10 +153,13 @@ export class ImovelUseCases {
 
       imovelEntidade.atualizarCadastro(metrosQuadrados, endereco);
 
-      await trx.update(imovel).set({
-        metrosQuadrados: imovelEntidade.metrosQuadrados,
-        endereco: imovelEntidade.endereco
-      });
+      await trx
+        .update(imovel)
+        .set({
+          metrosQuadrados: imovelEntidade.metrosQuadrados,
+          endereco: imovelEntidade.endereco
+        })
+        .where(eq(imovel.codigo, imovelEntidade.codigo));
     });
   }
 }

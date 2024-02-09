@@ -5,6 +5,7 @@ import { Senha } from '@/valueObjects/Senha';
 import { usuario } from '@/schema';
 import { nanoid } from 'nanoid';
 import { Empresa } from '@/entities/Empresa';
+import { eq } from 'drizzle-orm';
 
 interface CriarUsuarioArgs {
   codigoPessoa: string;
@@ -81,9 +82,12 @@ export class UsuarioUseCases {
 
       usuarioEncontrado.alterarSenha(senhaHash, confirmacaoSenhaHash);
 
-      await trx.update(usuario).set({
-        senha: usuarioEncontrado.senha
-      });
+      await trx
+        .update(usuario)
+        .set({
+          senha: usuarioEncontrado.senha
+        })
+        .where(eq(usuario.codigo, usuarioEncontrado.codigo));
 
       return {
         codigo: usuarioEncontrado.codigo,

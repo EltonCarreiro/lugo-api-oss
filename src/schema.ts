@@ -4,7 +4,8 @@ import {
   text,
   integer,
   decimal,
-  pgEnum
+  pgEnum,
+  unique
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -24,15 +25,21 @@ export const empresaRelations = relations(empresa, ({ many }) => ({
 
 export const tipoPessoaEnum = pgEnum('tipo_pessoa', ['funcionario', 'cliente']);
 
-export const pessoa = schema.table('pessoa', {
-  id: serial('id').primaryKey(),
-  codigo: text('codigo').unique().notNull(),
-  idEmpresa: integer('empresa_id').references(() => empresa.id),
-  nome: text('nome').notNull(),
-  sobrenome: text('sobrenome').notNull(),
-  cpf: text('cpf').notNull(),
-  tipo: tipoPessoaEnum('tipo')
-});
+export const pessoa = schema.table(
+  'pessoa',
+  {
+    id: serial('id').primaryKey(),
+    codigo: text('codigo').unique().notNull(),
+    idEmpresa: integer('empresa_id').references(() => empresa.id),
+    nome: text('nome').notNull(),
+    sobrenome: text('sobrenome').notNull(),
+    cpf: text('cpf').notNull(),
+    tipo: tipoPessoaEnum('tipo')
+  },
+  (t) => ({
+    uniqueNomeEmpresa: unique().on(t.idEmpresa, t.cpf)
+  })
+);
 
 export const pessoaRelations = relations(pessoa, ({ one, many }) => ({
   empresa: one(empresa, {

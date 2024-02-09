@@ -4,6 +4,7 @@ import { empresa as empresaTable, pessoa } from '@/schema';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { nanoid } from 'nanoid';
 import { PessoaUseCases } from './PessoaUseCases';
+import { eq } from 'drizzle-orm';
 
 interface CriarEmpresaArgs {
   nomeFantasia: string;
@@ -17,13 +18,19 @@ type CriarEmpresaResult = Omit<CriarEmpresaArgs, 'codigoUsuarioCriador'> & {
 };
 
 interface AlterarEmpresaArgs {
+  codigoUsuarioSolicitante: string;
   codigo: string;
   nomeFantasia: string;
   razaoSocial: string;
   cnpj: string;
 }
 
-type AlterarEmpresaResult = AlterarEmpresaArgs;
+interface AlterarEmpresaResult {
+  codigo: string;
+  nomeFantasia: string;
+  razaoSocial: string;
+  cnpj: string;
+}
 
 interface ClienteEmpresa {
   codigo: string;
@@ -43,6 +50,11 @@ interface CadastrarClienteResult {
   nome: string;
   sobrenome: string;
   cpf: string;
+}
+
+interface ListarClientesArgs {
+  codigoEmpresa: string;
+  codigoUsuarioSolicitante: string;
 }
 
 export class EmpresaUseCases {
@@ -119,12 +131,28 @@ export class EmpresaUseCases {
   }
 
   public alterarEmpresa({
+    codigoUsuarioSolicitante,
     codigo,
     nomeFantasia,
     razaoSocial,
     cnpj
   }: AlterarEmpresaArgs): Promise<AlterarEmpresaResult> {
     return db.transaction(async (trx): Promise<AlterarEmpresaResult> => {
+      const usuarioDb = await trx.query.usuario.findFirst({
+        with: {
+          pessoa: {
+            with: {
+              empresa: true
+            }
+          }
+        },
+        where: ({ codigo }, { eq }) => eq(codigo, codigoUsuarioSolicitante)
+      });
+
+      if (usuarioDb === undefined) {
+        throw new BusinessError('Usuário não encontrado.');
+      }
+
       const empresaExistente = await trx.query.empresa.findFirst({
         where: ({ codigo: codigoEmpresaExistente }, { eq }) =>
           eq(codigoEmpresaExistente, codigo)
@@ -132,6 +160,15 @@ export class EmpresaUseCases {
 
       if (empresaExistente === undefined) {
         throw new BusinessError('Empresa não encontrada.');
+      }
+
+      if (
+        usuarioDb.pessoa.empresa?.codigo !== empresaExistente.codigo ||
+        usuarioDb.pessoa.tipo !== 'funcionario'
+      ) {
+        throw new BusinessError(
+          'Apenas funcionários da imobiliária podem alterar os dados da empresa.'
+        );
       }
 
       const empresa = new Empresa(
@@ -143,11 +180,14 @@ export class EmpresaUseCases {
 
       empresa.alterarDados(nomeFantasia, razaoSocial, cnpj);
 
-      await trx.update(empresaTable).set({
-        nomeFantasia: empresa.nomeFantasia,
-        razaoSocial: empresa.razaoSocial,
-        cnpj: empresa.cnpj.value
-      });
+      await trx
+        .update(empresaTable)
+        .set({
+          nomeFantasia: empresa.nomeFantasia,
+          razaoSocial: empresa.razaoSocial,
+          cnpj: empresa.cnpj.value
+        })
+        .where(eq(empresaTable.codigo, empresa.codigo));
 
       return {
         codigo: empresa.codigo,
@@ -158,9 +198,10 @@ export class EmpresaUseCases {
     });
   }
 
-  public async listarClientes(
-    codigoEmpresa: string
-  ): Promise<ClienteEmpresa[]> {
+  public async listarClientes({
+    codigoEmpresa,
+    codigoUsuarioSolicitante
+  }: ListarClientesArgs): Promise<ClienteEmpresa[]> {
     const empresaDb = await db.query.empresa.findFirst({
       with: {
         pessoas: {
@@ -172,6 +213,23 @@ export class EmpresaUseCases {
 
     if (empresaDb === undefined) {
       throw new BusinessError('Empresa não encontrada.');
+    }
+
+    const usuarioSolicitante = await db.query.usuario.findFirst({
+      with: {
+        pessoa: true
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoUsuarioSolicitante)
+    });
+
+    if (usuarioSolicitante === undefined) {
+      throw new BusinessError('Usuário não encontrado');
+    }
+
+    if (usuarioSolicitante.pessoa.tipo !== 'funcionario') {
+      throw new BusinessError(
+        'Apenas funcionários da empresa podem ver seus clientes.'
+      );
     }
 
     return empresaDb.pessoas.map((cliente) => ({
@@ -203,18 +261,18 @@ export class EmpresaUseCases {
         throw new BusinessError('Usuário não encontrado.');
       }
 
+      const codigoEmpresa = usuarioRequisitanteDb.pessoa.empresa?.codigo;
+
+      if (codigoEmpresa === undefined) {
+        throw new BusinessError('Usuário não possui empresa vinculada.');
+      }
+
       const tipoPessoaRequisitante = usuarioRequisitanteDb.pessoa.tipo;
 
       if (tipoPessoaRequisitante !== 'funcionario') {
         throw new BusinessError(
           'Apenas funcionários da empresa podem cadastrar clientes.'
         );
-      }
-
-      const codigoEmpresa = usuarioRequisitanteDb.pessoa.empresa?.codigo;
-
-      if (codigoEmpresa === undefined) {
-        throw new BusinessError('Usuário não possui empresa vinculada.');
       }
 
       const criarPessoalResult = await this.pessoaUseCases.criarPessoa(

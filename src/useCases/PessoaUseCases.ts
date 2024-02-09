@@ -3,6 +3,7 @@ import { Pessoa } from '../entities/Pessoa';
 import { nanoid } from 'nanoid';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { pessoa as pessoaTable } from '@/schema';
+import { eq } from 'drizzle-orm';
 
 export interface CriarPessoaArgs {
   nome: string;
@@ -111,11 +112,14 @@ export class PessoaUseCases {
           }
         }
 
-        await trx.update(pessoaTable).set({
-          cpf: pessoa.cpf.value,
-          nome: pessoa.nome,
-          sobrenome: pessoa.sobrenome
-        });
+        await trx
+          .update(pessoaTable)
+          .set({
+            cpf: pessoa.cpf.value,
+            nome: pessoa.nome,
+            sobrenome: pessoa.sobrenome
+          })
+          .where(eq(pessoaTable.codigo, pessoa.codigo));
 
         return {
           codigo: pessoa.codigo,
