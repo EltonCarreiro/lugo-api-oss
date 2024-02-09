@@ -2,10 +2,13 @@ import { db, sql } from '@/data/db';
 import { AnuncioUseCases } from '../AnuncioUseCases';
 import { ImovelUseCases } from '../ImovelUseCases';
 import { MockData, setupData } from './utils';
+import { createLogger } from '@/logging';
 
 describe('Anuncio use cases testes', () => {
-  const imovelUseCases = new ImovelUseCases();
-  const anuncioUseCases = new AnuncioUseCases();
+  const log = createLogger({ trace_id: 'integration_test' });
+
+  const imovelUseCases = new ImovelUseCases(log);
+  const anuncioUseCases = new AnuncioUseCases(log);
 
   let mockData: MockData;
 

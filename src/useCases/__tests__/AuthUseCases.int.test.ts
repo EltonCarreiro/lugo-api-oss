@@ -2,10 +2,13 @@ import { getRedisClient } from '@/data/redis';
 import { AuthUseCases } from '../AuthUseCases';
 import { MockData, setupData } from './utils';
 import { sql } from '@/data/db';
+import { createLogger } from '@/logging';
 
 describe('Auth use cases testes', () => {
   let authUseCases: AuthUseCases;
   let mockData: MockData;
+
+  const log = createLogger({ trace_id: 'integration_test' });
 
   beforeAll(async () => {
     const redis = await getRedisClient();
@@ -15,7 +18,8 @@ describe('Auth use cases testes', () => {
         secret: 'my-secret'
       },
       1,
-      redis
+      redis,
+      log
     );
   });
 

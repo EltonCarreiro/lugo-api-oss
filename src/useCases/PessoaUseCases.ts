@@ -1,9 +1,10 @@
 import { DbTransaction, db } from '@/data/db';
 import { Pessoa } from '../entities/Pessoa';
 import { nanoid } from 'nanoid';
-import { BusinessError } from '@/shared/errors/BusinessError';
 import { pessoa as pessoaTable } from '@/schema';
 import { eq } from 'drizzle-orm';
+import { Logger } from '@/logging';
+import { throwBusinessErrorAndLog } from '@/shared/errors/throwAndLog';
 
 export interface CriarPessoaArgs {
   nome: string;
@@ -30,10 +31,17 @@ interface CriarAlterarPessoaResult {
 }
 
 export class PessoaUseCases {
+  constructor(private log: Logger) {}
+
   public async criarPessoa(
     { nome, sobrenome, cpf, codigoEmpresa, tipoPessoaEmpresa }: CriarPessoaArgs,
     transaction?: DbTransaction
   ): Promise<CriarAlterarPessoaResult> {
+    const hasOngoingTransaction = transaction !== undefined;
+
+    this.log.info(
+      `Criando pessoa ${hasOngoingTransaction ? '(com transaction existente)' : ''}`
+    );
     const codigo = nanoid();
     const novaPessoa = new Pessoa(
       codigo,
@@ -62,6 +70,7 @@ export class PessoaUseCases {
   }: AlterarPessoaArgs): Promise<CriarAlterarPessoaResult> {
     return await db.transaction(
       async (trx): Promise<CriarAlterarPessoaResult> => {
+        this.log.info('Alterando dados da pessoa.');
         const pessoaExistenteDb = await trx.query.pessoa.findFirst({
           with: {
             empresa: true
@@ -71,7 +80,7 @@ export class PessoaUseCases {
         });
 
         if (pessoaExistenteDb === undefined) {
-          throw new BusinessError('Pessoa não encontrada.');
+          return throwBusinessErrorAndLog(this.log, 'Pessoa não encontrada.');
         }
 
         const pessoa = new Pessoa(
@@ -108,7 +117,7 @@ export class PessoaUseCases {
           });
 
           if (pessoaExistentePorCpf !== undefined) {
-            throw new BusinessError('CPF já utilizado.');
+            return throwBusinessErrorAndLog(this.log, 'CPF já utilizado.');
           }
         }
 
@@ -121,6 +130,7 @@ export class PessoaUseCases {
           })
           .where(eq(pessoaTable.codigo, pessoa.codigo));
 
+        this.log.info('Pessoa alterada com sucesso.');
         return {
           codigo: pessoa.codigo,
           codigoEmpresa: pessoa.codigoEmpresa,
@@ -155,13 +165,19 @@ export class PessoaUseCases {
       pessoaExistente !== undefined &&
       pessoaExistente.empresa?.codigo === novaPessoa.codigoEmpresa
     ) {
-      throw new BusinessError('Pessoa já cadastrada com o CPF informado.');
+      return throwBusinessErrorAndLog(
+        this.log,
+        'Pessoa já cadastrada com o CPF informado.'
+      );
     }
 
     const codigoEmpresa = novaPessoa.codigoEmpresa;
     let idEmpresa: number | undefined;
 
     if (codigoEmpresa !== undefined) {
+      this.log.info(
+        'Código de empresa encontrado. Obtendo empresa para associar pessoa.'
+      );
       const empresa = await trx.query.empresa.findFirst({
         columns: {
           id: true
@@ -170,7 +186,10 @@ export class PessoaUseCases {
       });
 
       if (empresa === undefined) {
-        throw new BusinessError('Empresa informada não encontrada.');
+        return throwBusinessErrorAndLog(
+          this.log,
+          'Empresa informada não encontrada.'
+        );
       }
 
       idEmpresa = empresa.id;
@@ -185,6 +204,7 @@ export class PessoaUseCases {
       tipo: novaPessoa.tipoPessoaEmpresa
     });
 
+    this.log.info('Pessoa criada com sucesso.');
     return {
       codigo: novaPessoa.codigo,
       codigoEmpresa: novaPessoa.codigoEmpresa,

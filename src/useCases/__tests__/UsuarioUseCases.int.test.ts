@@ -2,13 +2,15 @@ import { MockData, setupData } from './utils';
 import { UsuarioUseCases } from '../UsuarioUseCases';
 import { nanoid } from 'nanoid';
 import { db, sql } from '@/data/db';
+import { createLogger } from '@/logging';
 
 describe('Usuario use cases testes', () => {
   let mockData: MockData;
   let usuarioUseCases: UsuarioUseCases;
+  const log = createLogger({ trace_id: 'integration_test' });
 
   beforeAll(async () => {
-    usuarioUseCases = new UsuarioUseCases();
+    usuarioUseCases = new UsuarioUseCases(log);
   });
 
   beforeEach(async () => {

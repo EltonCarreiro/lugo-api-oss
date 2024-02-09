@@ -1,10 +1,12 @@
 import { db, sql } from '@/data/db';
 import { ImovelUseCases } from '../ImovelUseCases';
 import { MockData, setupData } from './utils';
+import { createLogger } from '@/logging';
 
 describe('Imovel use cases testes', () => {
   let mockData: MockData;
-  const imovelUseCases = new ImovelUseCases();
+  const log = createLogger({ trace_id: 'integration_test' });
+  const imovelUseCases = new ImovelUseCases(log);
 
   beforeEach(async () => {
     mockData = await setupData();

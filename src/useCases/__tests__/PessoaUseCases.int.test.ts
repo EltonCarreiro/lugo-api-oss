@@ -1,9 +1,11 @@
 import { db, sql } from '@/data/db';
 import { PessoaUseCases } from '../PessoaUseCases';
 import { MockData, cleanupData, setupData } from './utils';
+import { createLogger } from '@/logging';
 
 describe('PessoaUseCases testes', () => {
-  const pessoaUseCases = new PessoaUseCases();
+  const log = createLogger({ trace_id: 'integration_test' });
+  const pessoaUseCases = new PessoaUseCases(log);
   let mockData: MockData;
 
   beforeEach(async () => {

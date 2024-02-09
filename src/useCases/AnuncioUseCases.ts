@@ -1,9 +1,10 @@
 import { db } from '@/data/db';
 import { Anuncio } from '@/entities/Anuncio';
-import { BusinessError } from '@/shared/errors/BusinessError';
 import BigNumber from 'bignumber.js';
 import { nanoid } from 'nanoid';
 import { anuncio } from '@/schema';
+import { Logger } from '@/logging';
+import { throwBusinessErrorAndLog } from '@/shared/errors/throwAndLog';
 
 interface CriarAnuncioArgs {
   codigoUsuarioSolicitante: string;
@@ -14,6 +15,8 @@ interface CriarAnuncioArgs {
 }
 
 export class AnuncioUseCases {
+  constructor(private log: Logger) {}
+
   public async criarAnuncio({
     codigoUsuarioSolicitante,
     codigoImovel,
@@ -21,6 +24,7 @@ export class AnuncioUseCases {
     valorCondominio,
     valorIPTU
   }: CriarAnuncioArgs) {
+    this.log.info('Criando anúncio.');
     return db.transaction(async (trx) => {
       const usuarioDb = await trx.query.usuario.findFirst({
         with: {
@@ -37,7 +41,9 @@ export class AnuncioUseCases {
       const pessoa = usuarioDb?.pessoa ?? undefined;
 
       if (pessoa === undefined) {
-        throw new Error('Pessoa associada á conta não encontrada.');
+        const errorMessage = 'Pessoa associada á conta não encontrada.';
+        this.log.warn(errorMessage);
+        throw new Error(errorMessage);
       }
 
       const imovel = await trx.query.imovel.findFirst({
@@ -53,7 +59,7 @@ export class AnuncioUseCases {
       });
 
       if (imovel === undefined) {
-        throw new BusinessError('Imóvel não encontrado.');
+        return throwBusinessErrorAndLog(this.log, 'Imóvel não encontrado.');
       }
 
       if (
@@ -61,13 +67,17 @@ export class AnuncioUseCases {
         (imovel.dono.empresa?.codigo !== usuarioDb?.pessoa.empresa?.codigo ||
           usuarioDb?.pessoa.tipo !== 'funcionario')
       ) {
-        throw new BusinessError(
+        return throwBusinessErrorAndLog(
+          this.log,
           'Apenas funcionários da imobiliária ou o dono do imóvel podem criar um anúncio.'
         );
       }
 
       if (imovel.anuncio !== null) {
-        throw new BusinessError('Imóvel já possui anúncio vinculado.');
+        return throwBusinessErrorAndLog(
+          this.log,
+          'Imóvel já possui anúncio vinculado.'
+        );
       }
 
       const novoAnuncio = new Anuncio({
@@ -84,6 +94,8 @@ export class AnuncioUseCases {
         valorCondominio: novoAnuncio.valorCondominio.toString(),
         valorIPTU: novoAnuncio.valorIPTU.toString()
       });
+
+      this.log.info('Anúncio criado com sucesso.');
     });
   }
 }

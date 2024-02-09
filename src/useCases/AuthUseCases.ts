@@ -4,6 +4,7 @@ import { Senha } from '@/valueObjects/Senha';
 import { nanoid } from 'nanoid';
 import { SignJWT, jwtVerify } from 'jose';
 import { RedisClient } from '@/data/redis';
+import { Logger } from '@/logging';
 
 interface LoginArgs {
   email: string;
@@ -30,7 +31,8 @@ export class AuthUseCases {
   constructor(
     jwtConfig: JWTConfig,
     private sessionDurationInSeconds: number,
-    private redis: RedisClient
+    private redis: RedisClient,
+    private log: Logger
   ) {
     if (jwtConfig.secret.trim().length === 0) {
       throw new Error('Authentication secret must not be empty.');
@@ -51,6 +53,7 @@ export class AuthUseCases {
     jwt: string
   ): Promise<UsuarioLogado | undefined> {
     try {
+      this.log.info('Obtendo usuário logado.');
       const codigoUsuario =
         (await this.redis.get(
           this.getRedisKey(await this.getAuthTokenFromJWT(jwt))
@@ -68,14 +71,20 @@ export class AuthUseCases {
         where: ({ codigo }, { eq }) => eq(codigo, codigoUsuario)
       });
 
+      this.log.info(
+        usuarioLogado === undefined
+          ? 'Usuário não encontrado.'
+          : 'Usuário logado retornado.'
+      );
       return usuarioLogado;
     } catch (_error: unknown) {
-      console.log('Bad JWT format. Returning undefined user');
+      this.log.warn('Bad JWT format. Returning undefined user');
       return undefined;
     }
   }
 
   public async login({ email, senha }: LoginArgs): Promise<string> {
+    this.log.info('Realizando login.');
     const senhaHash = new Senha(senha).value;
 
     const usuarioEncontrado = await db.query.usuario.findFirst({
@@ -88,6 +97,7 @@ export class AuthUseCases {
     });
 
     if (usuarioEncontrado === undefined) {
+      this.log.warn('Usuário/Senha incorretos.');
       throw new BusinessError('Usuário/Senha incorretos.');
     }
 
@@ -96,11 +106,13 @@ export class AuthUseCases {
       EX: this.sessionDurationInSeconds
     });
 
+    this.log.info('Login feito. Retornando auth-token.');
     return this.signJWT(authToken);
   }
 
   public async logout(jwt: string): Promise<void> {
     try {
+      this.log.info('Realizando logout.');
       this.redis.del(this.getRedisKey(await this.getAuthTokenFromJWT(jwt)));
     } catch (_error) {
       return;

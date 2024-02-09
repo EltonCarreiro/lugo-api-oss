@@ -1,9 +1,10 @@
 import { nanoid } from 'nanoid';
 import { Imovel } from '../entities/Imovel';
-import { BusinessError } from '@/shared/errors/BusinessError';
 import { db } from '@/data/db';
 import { imovel } from '@/schema';
 import { eq } from 'drizzle-orm';
+import { throwBusinessErrorAndLog } from '@/shared/errors/throwAndLog';
+import { Logger } from '@/logging';
 
 interface CriarImovelArgs {
   metrosQuadrados: number;
@@ -20,12 +21,16 @@ interface AlterarImovelArgs {
 }
 
 export class ImovelUseCases {
+  constructor(private log: Logger) {}
+
   public async cadastrarImovel({
     metrosQuadrados,
     endereco,
     codigoUsuarioSolicitante,
     codigoDono
   }: CriarImovelArgs): Promise<string> {
+    this.log.info('Cadastrando imóvel.');
+
     const novoImovel = new Imovel({
       codigo: nanoid(),
       codigoDono: codigoDono ?? codigoUsuarioSolicitante,
@@ -46,7 +51,10 @@ export class ImovelUseCases {
       });
 
       if (usuarioSolicitante === undefined) {
-        throw new BusinessError('Pessoa associada á conta não encontrada.');
+        return throwBusinessErrorAndLog(
+          this.log,
+          'Pessoa associada á conta não encontrada.'
+        );
       }
 
       let idDono = usuarioSolicitante.pessoa.id;
@@ -62,11 +70,12 @@ export class ImovelUseCases {
         });
 
         if (dono === undefined) {
-          throw new BusinessError('Dono não encontrado');
+          return throwBusinessErrorAndLog(this.log, 'Dono não encontrado');
         }
 
         if (usuarioSolicitante.pessoa.tipo !== 'funcionario') {
-          throw new BusinessError(
+          return throwBusinessErrorAndLog(
+            this.log,
             'Usuário solicitante precisa ser funcionário para cadastrar imóvel para outra pessoa.'
           );
         }
@@ -74,7 +83,8 @@ export class ImovelUseCases {
         if (
           usuarioSolicitante.pessoa.empresa?.codigo !== dono.empresa?.codigo
         ) {
-          throw new BusinessError(
+          return throwBusinessErrorAndLog(
+            this.log,
             'Funcionário só pode alterar imóveis atrelados á própria empresa.'
           );
         }
@@ -89,6 +99,7 @@ export class ImovelUseCases {
         metrosQuadrados: novoImovel.metrosQuadrados
       });
 
+      this.log.info(`Imvóvel ${novoImovel.codigo} criado com sucesso.`);
       return novoImovel.codigo;
     });
   }
@@ -99,6 +110,8 @@ export class ImovelUseCases {
     endereco,
     codigoUsuarioSolicitante
   }: AlterarImovelArgs): Promise<void> {
+    this.log.info('Alterando imóvel.');
+
     return db.transaction(async (trx) => {
       const imovelDb = await trx.query.imovel.findFirst({
         with: {
@@ -113,7 +126,7 @@ export class ImovelUseCases {
       });
 
       if (imovelDb === undefined) {
-        throw new BusinessError('Imóvel não encontrado.');
+        return throwBusinessErrorAndLog(this.log, 'Imóvel não encontrado.');
       }
 
       if (codigoUsuarioSolicitante !== imovelDb.dono.usuario?.codigo) {
@@ -129,14 +142,18 @@ export class ImovelUseCases {
         });
 
         if (usuario === undefined) {
-          throw new BusinessError('Usuário solicitante não encontrado.');
+          return throwBusinessErrorAndLog(
+            this.log,
+            'Usuário solicitante não encontrado.'
+          );
         }
 
         if (
           usuario?.pessoa.tipo !== 'funcionario' ||
           usuario.pessoa.empresa?.codigo !== imovelDb.dono?.empresa?.codigo
         ) {
-          throw new BusinessError(
+          return throwBusinessErrorAndLog(
+            this.log,
             'Imóvel só pode ser alterado pelo dono ou funcionário da imobiliária.'
           );
         }
@@ -158,6 +175,8 @@ export class ImovelUseCases {
           endereco: imovelEntidade.endereco
         })
         .where(eq(imovel.codigo, imovelEntidade.codigo));
+
+      this.log.info(`Imóvel ${imovelEntidade.codigo} alterado com sucesso.`);
     });
   }
 }
