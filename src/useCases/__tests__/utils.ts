@@ -1,5 +1,6 @@
 import { DbTransaction, db } from '@/data/db';
 import {
+  anuncio as anuncioTable,
   empresa as empresaTable,
   imovel as imovelTable,
   pessoa as pessoaTable,
@@ -114,6 +115,7 @@ export const setupData = async () => {
 export const cleanupData = () => {
   return db.transaction(async (trx) => {
     await trx.delete(usuarioTable);
+    await trx.delete(anuncioTable);
     await trx.delete(imovelTable);
     await trx.delete(pessoaTable);
     await trx.delete(empresaTable);

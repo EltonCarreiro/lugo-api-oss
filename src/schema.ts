@@ -82,7 +82,10 @@ export const imovelRelations = relations(imovel, ({ one }) => ({
     fields: [imovel.idDono],
     references: [pessoa.id]
   }),
-  anuncio: one(anuncio)
+  anuncio: one(anuncio, {
+    fields: [imovel.id],
+    references: [anuncio.idImovel]
+  })
 }));
 
 export const anuncio = schema.table('anuncio', {
@@ -94,3 +97,10 @@ export const anuncio = schema.table('anuncio', {
   valorCondominio: decimal('valor_condominio').notNull(),
   valorIPTU: decimal('valor_iptu').notNull()
 });
+
+export const anuncioRelations = relations(anuncio, ({ one }) => ({
+  imovel: one(imovel, {
+    fields: [anuncio.idImovel],
+    references: [imovel.id]
+  })
+}));

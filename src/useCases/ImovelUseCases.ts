@@ -20,8 +20,6 @@ interface AlterarImovelArgs {
 }
 
 export class ImovelUseCases {
-  _imoveis: Imovel[] = [];
-
   public async cadastrarImovel({
     metrosQuadrados,
     endereco,

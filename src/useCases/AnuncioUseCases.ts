@@ -3,7 +3,7 @@ import { Anuncio } from '@/entities/Anuncio';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import BigNumber from 'bignumber.js';
 import { nanoid } from 'nanoid';
-import { anuncio } from 'schema';
+import { anuncio } from '@/schema';
 
 interface CriarAnuncioArgs {
   codigoUsuarioSolicitante: string;
@@ -22,14 +22,11 @@ export class AnuncioUseCases {
     valorIPTU
   }: CriarAnuncioArgs) {
     return db.transaction(async (trx) => {
-      const registroDb = await trx.query.usuario.findFirst({
+      const usuarioDb = await trx.query.usuario.findFirst({
         with: {
           pessoa: {
             with: {
-              imoveis: {
-                where: ({ codigo: codigoImovelExistente }, { eq }) =>
-                  eq(codigoImovelExistente, codigoImovel)
-              }
+              empresa: true
             }
           }
         },
@@ -37,16 +34,40 @@ export class AnuncioUseCases {
           eq(codigoUsuario, codigoUsuarioSolicitante)
       });
 
-      const pessoa = registroDb?.pessoa ?? undefined;
+      const pessoa = usuarioDb?.pessoa ?? undefined;
 
       if (pessoa === undefined) {
         throw new Error('Pessoa associada á conta não encontrada.');
       }
 
-      const imovel = pessoa.imoveis[0];
+      const imovel = await trx.query.imovel.findFirst({
+        with: {
+          dono: {
+            with: {
+              empresa: true
+            }
+          },
+          anuncio: true
+        },
+        where: ({ codigo }, { eq }) => eq(codigo, codigoImovel)
+      });
 
       if (imovel === undefined) {
         throw new BusinessError('Imóvel não encontrado.');
+      }
+
+      if (
+        imovel.dono.codigo !== usuarioDb?.pessoa.codigo &&
+        (imovel.dono.empresa?.codigo !== usuarioDb?.pessoa.empresa?.codigo ||
+          usuarioDb?.pessoa.tipo !== 'funcionario')
+      ) {
+        throw new BusinessError(
+          'Apenas funcionários da imobiliária ou o dono do imóvel podem criar um anúncio.'
+        );
+      }
+
+      if (imovel.anuncio !== null) {
+        throw new BusinessError('Imóvel já possui anúncio vinculado.');
       }
 
       const novoAnuncio = new Anuncio({
