@@ -1,4 +1,4 @@
-import { db } from '@/data/db';
+import { db, sql } from '@/data/db';
 import { AnuncioUseCases } from '../AnuncioUseCases';
 import { ImovelUseCases } from '../ImovelUseCases';
 import { MockData, setupData } from './utils';
@@ -11,6 +11,10 @@ describe('Anuncio use cases testes', () => {
 
   beforeEach(async () => {
     mockData = await setupData();
+  });
+
+  afterAll(async () => {
+    await sql.end();
   });
 
   it('não deve permitir criar anúncio se usuário solicitante não for encontrado', async () => {

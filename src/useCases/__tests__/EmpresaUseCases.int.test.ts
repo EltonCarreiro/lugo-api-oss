@@ -1,4 +1,4 @@
-import { db } from '@/data/db';
+import { db, sql } from '@/data/db';
 import { EmpresaUseCases } from '../EmpresaUseCases';
 import { PessoaUseCases } from '../PessoaUseCases';
 import { MockData, gerarCnpj, gerarCpf, setupData } from './utils';
@@ -9,6 +9,10 @@ describe('Empresa use cases testes', () => {
 
   beforeEach(async () => {
     mockData = await setupData();
+  });
+
+  afterAll(async () => {
+    await sql.end();
   });
 
   describe('ao criar uma empresa', () => {

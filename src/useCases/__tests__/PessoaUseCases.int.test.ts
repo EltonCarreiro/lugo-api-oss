@@ -1,4 +1,4 @@
-import { db } from '@/data/db';
+import { db, sql } from '@/data/db';
 import { PessoaUseCases } from '../PessoaUseCases';
 import { MockData, cleanupData, setupData } from './utils';
 
@@ -12,6 +12,10 @@ describe('PessoaUseCases testes', () => {
 
   afterEach(async () => {
     await cleanupData();
+  });
+
+  afterAll(async () => {
+    await sql.end();
   });
 
   describe('ao criar pessoa', () => {

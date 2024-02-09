@@ -1,4 +1,4 @@
-import { db } from '@/data/db';
+import { db, sql } from '@/data/db';
 import { ImovelUseCases } from '../ImovelUseCases';
 import { MockData, setupData } from './utils';
 
@@ -8,6 +8,10 @@ describe('Imovel use cases testes', () => {
 
   beforeEach(async () => {
     mockData = await setupData();
+  });
+
+  afterAll(async () => {
+    await sql.end();
   });
 
   describe('ao cadastrar imóvel', () => {

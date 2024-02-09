@@ -1,7 +1,7 @@
 import { MockData, setupData } from './utils';
 import { UsuarioUseCases } from '../UsuarioUseCases';
 import { nanoid } from 'nanoid';
-import { db } from '@/data/db';
+import { db, sql } from '@/data/db';
 
 describe('Usuario use cases testes', () => {
   let mockData: MockData;
@@ -13,6 +13,10 @@ describe('Usuario use cases testes', () => {
 
   beforeEach(async () => {
     mockData = await setupData();
+  });
+
+  afterAll(async () => {
+    await sql.end();
   });
 
   describe('ao criar usuário', () => {
