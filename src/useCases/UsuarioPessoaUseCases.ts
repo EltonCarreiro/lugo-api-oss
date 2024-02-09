@@ -1,6 +1,7 @@
 import { PessoaUseCases } from '@/useCases/PessoaUseCases';
 import { UsuarioUseCases } from './UsuarioUseCases';
 import { db } from '@/data/db';
+import { Logger } from '@/logging';
 
 interface CriarPessoaEUsuarioArgs {
   nome: string;
@@ -24,9 +25,9 @@ export class UsuarioPessoaUseCases {
   private pessoaUseCases: PessoaUseCases;
   private usuarioUseCases: UsuarioUseCases;
 
-  constructor() {
-    this.pessoaUseCases = new PessoaUseCases();
-    this.usuarioUseCases = new UsuarioUseCases();
+  constructor(private log: Logger) {
+    this.pessoaUseCases = new PessoaUseCases(log);
+    this.usuarioUseCases = new UsuarioUseCases(log);
   }
 
   public async criarPessoaEUsuario({
@@ -37,6 +38,7 @@ export class UsuarioPessoaUseCases {
     senha,
     confirmacaoSenha
   }: CriarPessoaEUsuarioArgs): Promise<CriarPessoaEUsuarioResult> {
+    this.log.info('Criando pessoa e usuário.');
     return await db.transaction(
       async (trx): Promise<CriarPessoaEUsuarioResult> => {
         const criarPessoaResult = await this.pessoaUseCases.criarPessoa(
@@ -59,6 +61,7 @@ export class UsuarioPessoaUseCases {
           trx
         );
 
+        this.log.info('Pessoa e usuário criados com sucesso.');
         return {
           codigoPessoa: criarPessoaResult.codigo,
           codigoUsuario: criarUsuarioResult.codigo,

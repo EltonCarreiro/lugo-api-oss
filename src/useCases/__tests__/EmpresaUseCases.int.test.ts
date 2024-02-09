@@ -2,9 +2,11 @@ import { db, sql } from '@/data/db';
 import { EmpresaUseCases } from '../EmpresaUseCases';
 import { PessoaUseCases } from '../PessoaUseCases';
 import { MockData, gerarCnpj, gerarCpf, setupData } from './utils';
+import { createLogger } from '@/logging';
 
 describe('Empresa use cases testes', () => {
-  const empresaUseCases = new EmpresaUseCases(new PessoaUseCases());
+  const log = createLogger({ trace_id: 'integration_test' });
+  const empresaUseCases = new EmpresaUseCases(new PessoaUseCases(log), log);
   let mockData: MockData;
 
   beforeEach(async () => {

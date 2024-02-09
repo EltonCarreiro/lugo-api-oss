@@ -1,4 +1,3 @@
-import { BusinessError } from '@/shared/errors/BusinessError';
 import { Usuario } from '../entities/Usuario';
 import { DbTransaction, db } from '@/data/db';
 import { Senha } from '@/valueObjects/Senha';
@@ -6,6 +5,8 @@ import { usuario } from '@/schema';
 import { nanoid } from 'nanoid';
 import { Empresa } from '@/entities/Empresa';
 import { eq } from 'drizzle-orm';
+import { Logger } from '@/logging';
+import { throwBusinessErrorAndLog } from '@/shared/errors/throwAndLog';
 
 interface CriarUsuarioArgs {
   codigoPessoa: string;
@@ -33,11 +34,18 @@ interface EmpresaAssociada {
 }
 
 export class UsuarioUseCases {
+  constructor(private log: Logger) {}
+
   public async criarUsuario(
     criarUsuarioArgs: CriarUsuarioArgs,
     transaction?: DbTransaction
   ): Promise<CriarAlterarUsuarioResult> {
-    if (transaction !== undefined) {
+    const hasOngoingTransaction = transaction !== undefined;
+    this.log.info(
+      `Criando usuário ${hasOngoingTransaction ? '(com transaction existente)' : ''}`
+    );
+
+    if (hasOngoingTransaction) {
       return this.internalCriarUsuario(criarUsuarioArgs, transaction);
     }
 
@@ -52,12 +60,13 @@ export class UsuarioUseCases {
     confirmacaoSenha
   }: CriarAlterarUsuarioArgs): Promise<CriarAlterarUsuarioResult> {
     return db.transaction(async (trx): Promise<CriarAlterarUsuarioResult> => {
+      this.log.info('Alterando senha de usuário.');
       // TODO: Move this to domain layer
       const senhaHash = new Senha(senha).value;
       const confirmacaoSenhaHash = new Senha(confirmacaoSenha).value;
 
       if (senhaHash !== confirmacaoSenhaHash) {
-        throw new BusinessError('Senhas não coincidem.');
+        return throwBusinessErrorAndLog(this.log, 'Senhas não coincidem.');
       }
 
       const usuarioDb = await trx.query.usuario.findFirst({
@@ -71,7 +80,7 @@ export class UsuarioUseCases {
       });
 
       if (usuarioDb === undefined) {
-        throw new BusinessError('Usuário não encontrado.');
+        return throwBusinessErrorAndLog(this.log, 'Usuário não encontrado.');
       }
 
       const usuarioEncontrado = new Usuario({
@@ -89,6 +98,7 @@ export class UsuarioUseCases {
         })
         .where(eq(usuario.codigo, usuarioEncontrado.codigo));
 
+      this.log.info('Senha alterada com sucesso.');
       return {
         codigo: usuarioEncontrado.codigo,
         email: usuarioEncontrado.email
@@ -99,6 +109,7 @@ export class UsuarioUseCases {
   public async obterEmpresaAssociada(
     codigoUsuario: string
   ): Promise<EmpresaAssociada | undefined> {
+    this.log.info('Obtendo empresa associada.');
     const usuarioDb = await db.query.usuario.findFirst({
       with: {
         pessoa: {
@@ -111,12 +122,13 @@ export class UsuarioUseCases {
     });
 
     if (usuarioDb === undefined) {
-      throw new BusinessError('Usuário não encontrado.');
+      return throwBusinessErrorAndLog(this.log, 'Usuário não encontrado.');
     }
 
     const empresaDb = usuarioDb.pessoa?.empresa ?? undefined;
 
     if (empresaDb === undefined) {
+      this.log.info('Empresa não encontrada.');
       return undefined;
     }
 
@@ -127,6 +139,7 @@ export class UsuarioUseCases {
       empresaDb.cnpj
     );
 
+    this.log.info('Retornando empresa associada.');
     return {
       codigo: empresaAssociada.codigo,
       nomeFantasia: empresaAssociada.nomeFantasia,
@@ -149,7 +162,7 @@ export class UsuarioUseCases {
     });
 
     if (pessoaExistente === undefined) {
-      throw new BusinessError('Pessoa não encontrada.');
+      return throwBusinessErrorAndLog(this.log, 'Pessoa não encontrada.');
     }
 
     const usuarioExistente = await trx.query.usuario.findFirst({
@@ -162,18 +175,19 @@ export class UsuarioUseCases {
     });
 
     if (usuarioExistente !== undefined) {
-      if (usuarioExistente.idPessoa === pessoaExistente.id) {
-        throw new BusinessError('Pessoa já possui usuário cadastrado.');
-      } else {
-        throw new BusinessError('Email já cadastrado.');
-      }
+      return throwBusinessErrorAndLog(
+        this.log,
+        usuarioExistente.idPessoa === pessoaExistente.id
+          ? 'Pessoa já possui usuário cadastrado.'
+          : 'Email já cadastrado.'
+      );
     }
 
     const senhaHash = new Senha(senha).value;
     const confirmacaoSenhaHash = new Senha(confirmacaoSenha).value;
 
     if (senhaHash !== confirmacaoSenhaHash) {
-      throw new BusinessError('Senhas não coincidem.');
+      return throwBusinessErrorAndLog(this.log, 'Senhas não coincidem.');
     }
 
     const novoUsuario = new Usuario({
@@ -189,6 +203,7 @@ export class UsuarioUseCases {
       idPessoa: pessoaExistente.id
     });
 
+    this.log.info('Usuário criado com sucesso.');
     return {
       codigo: novoUsuario.codigo,
       email: novoUsuario.email
