@@ -3,6 +3,7 @@ import { Pessoa } from '../entities/Pessoa';
 import { nanoid } from 'nanoid';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { pessoa as pessoaTable } from '@/schema';
+import { eq } from 'drizzle-orm';
 
 export interface CriarPessoaArgs {
   nome: string;
@@ -92,14 +93,17 @@ export class PessoaUseCases {
               cpf: true,
               idEmpresa: true
             },
-            where: ({ cpf: cpfPessoaExistente, idEmpresa }, { eq, and }) => {
+            where: (
+              { cpf: cpfPessoaExistente, idEmpresa },
+              { eq, and, isNull }
+            ) => {
               const comparacaoCpf = eq(cpfPessoaExistente, pessoa.cpf.value);
 
               if (idEmpresaExistente !== undefined) {
                 return and(comparacaoCpf, eq(idEmpresa, idEmpresaExistente));
               }
 
-              return comparacaoCpf;
+              return and(comparacaoCpf, isNull(idEmpresa));
             }
           });
 
@@ -108,11 +112,14 @@ export class PessoaUseCases {
           }
         }
 
-        await trx.update(pessoaTable).set({
-          cpf: pessoa.cpf.value,
-          nome: pessoa.nome,
-          sobrenome: pessoa.sobrenome
-        });
+        await trx
+          .update(pessoaTable)
+          .set({
+            cpf: pessoa.cpf.value,
+            nome: pessoa.nome,
+            sobrenome: pessoa.sobrenome
+          })
+          .where(eq(pessoaTable.codigo, pessoa.codigo));
 
         return {
           codigo: pessoa.codigo,
@@ -134,10 +141,20 @@ export class PessoaUseCases {
       columns: {
         cpf: true
       },
+      with: {
+        empresa: {
+          columns: {
+            codigo: true
+          }
+        }
+      },
       where: ({ cpf }, { eq }) => eq(cpf, novaPessoa.cpf.value)
     });
 
-    if (pessoaExistente !== undefined) {
+    if (
+      pessoaExistente !== undefined &&
+      pessoaExistente.empresa?.codigo === novaPessoa.codigoEmpresa
+    ) {
       throw new BusinessError('Pessoa já cadastrada com o CPF informado.');
     }
 

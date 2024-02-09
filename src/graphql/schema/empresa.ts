@@ -37,7 +37,16 @@ export const Empresa = builder.objectRef<Empresa>('Empresa').implement({
       type: [ClienteEmpresa],
       description: 'Todos os clientes da empresa.',
       resolve: (parent, _args, ctx) => {
-        return ctx.useCases.empresa.listarClientes(parent.codigo);
+        const usuario = ctx.usuarioLogado;
+
+        if (usuario === undefined) {
+          throw new Error('Não autenticado.');
+        }
+
+        return ctx.useCases.empresa.listarClientes({
+          codigoEmpresa: parent.codigo,
+          codigoUsuarioSolicitante: usuario.codigo
+        });
       }
     })
   })

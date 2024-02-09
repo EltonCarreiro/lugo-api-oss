@@ -3,11 +3,13 @@ import { Imovel } from '../entities/Imovel';
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { db } from '@/data/db';
 import { imovel } from '@/schema';
+import { eq } from 'drizzle-orm';
 
 interface CriarImovelArgs {
   metrosQuadrados: number;
   endereco: string;
   codigoUsuarioSolicitante: string;
+  codigoDono?: string;
 }
 
 interface AlterarImovelArgs {
@@ -18,34 +20,71 @@ interface AlterarImovelArgs {
 }
 
 export class ImovelUseCases {
-  _imoveis: Imovel[] = [];
-
   public async cadastrarImovel({
     metrosQuadrados,
     endereco,
-    codigoUsuarioSolicitante
+    codigoUsuarioSolicitante,
+    codigoDono
   }: CriarImovelArgs): Promise<string> {
     const novoImovel = new Imovel({
       codigo: nanoid(),
-      codigoDono: codigoUsuarioSolicitante,
+      codigoDono: codigoDono ?? codigoUsuarioSolicitante,
       metrosQuadrados,
       endereco
     });
 
     return db.transaction(async (trx): Promise<string> => {
-      const dono = await trx.query.usuario.findFirst({
+      const usuarioSolicitante = await trx.query.usuario.findFirst({
         with: {
-          pessoa: true
-        }
+          pessoa: {
+            with: {
+              empresa: true
+            }
+          }
+        },
+        where: ({ codigo }, { eq }) => eq(codigo, codigoUsuarioSolicitante)
       });
 
-      if (dono === undefined) {
+      if (usuarioSolicitante === undefined) {
         throw new BusinessError('Pessoa associada á conta não encontrada.');
+      }
+
+      let idDono = usuarioSolicitante.pessoa.id;
+      if (
+        codigoDono !== undefined &&
+        usuarioSolicitante.pessoa.codigo !== codigoDono
+      ) {
+        const dono = await trx.query.pessoa.findFirst({
+          with: {
+            empresa: true
+          },
+          where: ({ codigo }, { eq }) => eq(codigo, codigoDono)
+        });
+
+        if (dono === undefined) {
+          throw new BusinessError('Dono não encontrado');
+        }
+
+        if (usuarioSolicitante.pessoa.tipo !== 'funcionario') {
+          throw new BusinessError(
+            'Usuário solicitante precisa ser funcionário para cadastrar imóvel para outra pessoa.'
+          );
+        }
+
+        if (
+          usuarioSolicitante.pessoa.empresa?.codigo !== dono.empresa?.codigo
+        ) {
+          throw new BusinessError(
+            'Funcionário só pode alterar imóveis atrelados á própria empresa.'
+          );
+        }
+
+        idDono = dono.id;
       }
 
       await db.insert(imovel).values({
         codigo: novoImovel.codigo,
-        idDono: dono.id,
+        idDono,
         endereco: novoImovel.endereco,
         metrosQuadrados: novoImovel.metrosQuadrados
       });
@@ -65,7 +104,8 @@ export class ImovelUseCases {
         with: {
           dono: {
             with: {
-              usuario: true
+              usuario: true,
+              empresa: true
             }
           }
         },
@@ -73,35 +113,51 @@ export class ImovelUseCases {
       });
 
       if (imovelDb === undefined) {
-        throw new BusinessError('Imóvel não encontrado');
+        throw new BusinessError('Imóvel não encontrado.');
       }
 
-      const dono = imovelDb.dono ?? undefined;
-      const usuario = dono?.usuario ?? undefined;
+      if (codigoUsuarioSolicitante !== imovelDb.dono.usuario?.codigo) {
+        const usuario = await trx.query.usuario.findFirst({
+          with: {
+            pessoa: {
+              with: {
+                empresa: true
+              }
+            }
+          },
+          where: ({ codigo }, { eq }) => eq(codigo, codigoUsuarioSolicitante)
+        });
 
-      if (
-        dono === undefined ||
-        usuario === undefined ||
-        usuario.codigo !== codigoUsuarioSolicitante
-      ) {
-        throw new BusinessError(
-          'Alteração cadastral só pode ser feita pelo dono do imóvel.'
-        );
+        if (usuario === undefined) {
+          throw new BusinessError('Usuário solicitante não encontrado.');
+        }
+
+        if (
+          usuario?.pessoa.tipo !== 'funcionario' ||
+          usuario.pessoa.empresa?.codigo !== imovelDb.dono?.empresa?.codigo
+        ) {
+          throw new BusinessError(
+            'Imóvel só pode ser alterado pelo dono ou funcionário da imobiliária.'
+          );
+        }
       }
 
       const imovelEntidade = new Imovel({
         codigo: imovelDb.codigo,
-        codigoDono: dono.codigo,
+        codigoDono: imovelDb.dono.codigo,
         endereco: imovelDb.endereco,
         metrosQuadrados: imovelDb.metrosQuadrados ?? undefined
       });
 
       imovelEntidade.atualizarCadastro(metrosQuadrados, endereco);
 
-      await trx.update(imovel).set({
-        metrosQuadrados: imovelEntidade.metrosQuadrados,
-        endereco: imovelEntidade.endereco
-      });
+      await trx
+        .update(imovel)
+        .set({
+          metrosQuadrados: imovelEntidade.metrosQuadrados,
+          endereco: imovelEntidade.endereco
+        })
+        .where(eq(imovel.codigo, imovelEntidade.codigo));
     });
   }
 }

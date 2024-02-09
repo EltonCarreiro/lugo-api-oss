@@ -5,6 +5,7 @@ import { Senha } from '@/valueObjects/Senha';
 import { usuario } from '@/schema';
 import { nanoid } from 'nanoid';
 import { Empresa } from '@/entities/Empresa';
+import { eq } from 'drizzle-orm';
 
 interface CriarUsuarioArgs {
   codigoPessoa: string;
@@ -70,7 +71,7 @@ export class UsuarioUseCases {
       });
 
       if (usuarioDb === undefined) {
-        throw new BusinessError('Usuário não encontrado');
+        throw new BusinessError('Usuário não encontrado.');
       }
 
       const usuarioEncontrado = new Usuario({
@@ -81,9 +82,12 @@ export class UsuarioUseCases {
 
       usuarioEncontrado.alterarSenha(senhaHash, confirmacaoSenhaHash);
 
-      await trx.update(usuario).set({
-        senha: usuarioEncontrado.senha
-      });
+      await trx
+        .update(usuario)
+        .set({
+          senha: usuarioEncontrado.senha
+        })
+        .where(eq(usuario.codigo, usuarioEncontrado.codigo));
 
       return {
         codigo: usuarioEncontrado.codigo,
@@ -145,7 +149,7 @@ export class UsuarioUseCases {
     });
 
     if (pessoaExistente === undefined) {
-      throw new BusinessError('Pessoa não encontrada');
+      throw new BusinessError('Pessoa não encontrada.');
     }
 
     const usuarioExistente = await trx.query.usuario.findFirst({
