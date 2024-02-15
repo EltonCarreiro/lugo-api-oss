@@ -89,6 +89,39 @@ builder.mutationField('criarEmpresa', (t) =>
   })
 );
 
+builder.mutationField('alterarEmpresa', (t) =>
+  t.field({
+    type: Empresa,
+    description: 'Permite alterar informações da empresa',
+    errors: {
+      types: [Error, BusinessError]
+    },
+    args: {
+      codigo: t.arg.string({ required: true }),
+      nomeFantasia: t.arg.string({ required: true }),
+      razaoSocial: t.arg.string({ required: true }),
+      cnpj: t.arg.string({ required: true })
+    },
+    resolve: async (_parent, args, ctx) => {
+      const codigoUsuarioSolicitante = ctx.usuarioLogado?.codigo;
+
+      if (codigoUsuarioSolicitante === undefined) {
+        throw new Error('Usuário não autenticado.');
+      }
+
+      const result = await ctx.useCases.empresa.alterarEmpresa({
+        codigoUsuarioSolicitante,
+        codigo: args.codigo,
+        cnpj: args.cnpj,
+        nomeFantasia: args.nomeFantasia,
+        razaoSocial: args.razaoSocial
+      });
+
+      return { ...result, clientes: [] };
+    }
+  })
+);
+
 builder.mutationField('cadastrarCliente', (t) =>
   t.field({
     description: 'Cadastrar um novo cliente na empresa',
