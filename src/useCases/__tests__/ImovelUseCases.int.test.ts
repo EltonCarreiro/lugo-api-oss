@@ -136,7 +136,7 @@ describe('Imovel use cases testes', () => {
 
     it('não deve alterar imóvel caso alteração seja feita por usuário cliente que não seja dono do imóvel', async () => {
       const pessoa = mockData.empresas[0].pessoas[0];
-      const pessoa4 = mockData.empresas[0].pessoas[3];
+      const cliente = mockData.empresas[0].clientes[0];
 
       const codigoImovel = await imovelUseCases.cadastrarImovel({
         codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
@@ -147,7 +147,7 @@ describe('Imovel use cases testes', () => {
       await expect(
         imovelUseCases.alterarImovel({
           codigoImovel: codigoImovel,
-          codigoUsuarioSolicitante: pessoa4.usuario?.codigo ?? '',
+          codigoUsuarioSolicitante: cliente.usuario?.codigo ?? '',
           endereco: 'fake_endereco_atualizado',
           metrosQuadrados: 555
         })

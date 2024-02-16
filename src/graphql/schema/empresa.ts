@@ -141,18 +141,43 @@ builder.mutationField('cadastrarCliente', (t) =>
         throw new Error('Usuário não autenticado.');
       }
 
-      const result = await ctx.useCases.empresa.cadastrarCliente({
+      return ctx.useCases.empresa.cadastrarCliente({
         codigoUsuarioRequisitante: usuarioLogado.codigo,
         cpf,
         nome,
         sobrenome
       });
+    }
+  })
+);
 
-      return {
-        codigo: result.codigo,
-        nome: result.nome,
-        sobrenome: result.sobrenome
-      };
+builder.mutationField('alterarCliente', (t) =>
+  t.field({
+    type: ClienteEmpresa,
+    description: 'Permite alterar informações do cliente da empresa',
+    args: {
+      codigo: t.arg.string({ required: true }),
+      cpf: t.arg.string({ required: true }),
+      nome: t.arg.string({ required: true }),
+      sobrenome: t.arg.string({ required: true })
+    },
+    errors: {
+      types: [Error, BusinessError]
+    },
+    resolve: async (_parent, args, ctx) => {
+      const usuarioLogado = ctx.usuarioLogado;
+
+      if (usuarioLogado === undefined) {
+        throw new Error('Usuário não autenticado.');
+      }
+
+      return ctx.useCases.empresa.alterarCliente({
+        codigoUsuarioRequisitante: usuarioLogado.codigo,
+        codigo: args.codigo,
+        cpf: args.cpf,
+        nome: args.nome,
+        sobrenome: args.sobrenome
+      });
     }
   })
 );

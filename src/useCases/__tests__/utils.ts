@@ -71,12 +71,22 @@ export const setupData = async () => {
                 includeUser: true
               },
               trx
-            ),
+            )
+          ],
+          clientes: [
             await criarPessoa(
               {
                 idEmpresa,
                 tipo: 'cliente',
                 includeUser: true
+              },
+              trx
+            ),
+            await criarPessoa(
+              {
+                idEmpresa,
+                tipo: 'cliente',
+                includeUser: false
               },
               trx
             )
@@ -94,7 +104,8 @@ export const setupData = async () => {
               },
               trx
             )
-          ]
+          ],
+          clientes: []
         }
       ],
       pessoas: [
@@ -106,7 +117,8 @@ export const setupData = async () => {
           },
           trx
         )
-      ]
+      ],
+      clientes: []
     };
 
     return result;

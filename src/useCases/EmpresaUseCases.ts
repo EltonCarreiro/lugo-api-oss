@@ -1,11 +1,12 @@
 import { db } from '@/data/db';
 import { Empresa } from '@/entities/Empresa';
-import { empresa as empresaTable, pessoa } from '@/schema';
+import { empresa as empresaTable, pessoa as pessoaTable } from '@/schema';
 import { nanoid } from 'nanoid';
 import { PessoaUseCases } from './PessoaUseCases';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Logger } from '@/logging';
 import { throwBusinessErrorAndLog } from '@/shared/errors/throwAndLog';
+import { Pessoa } from '@/entities/Pessoa';
 
 interface CriarEmpresaArgs {
   nomeFantasia: string;
@@ -47,6 +48,21 @@ interface CadastrarClienteArgs {
 }
 
 interface CadastrarClienteResult {
+  codigo: string;
+  nome: string;
+  sobrenome: string;
+  cpf: string;
+}
+
+interface AlterarClienteArgs {
+  codigoUsuarioRequisitante: string;
+  codigo: string;
+  nome: string;
+  sobrenome: string;
+  cpf: string;
+}
+
+interface AlterarClienteResult {
   codigo: string;
   nome: string;
   sobrenome: string;
@@ -129,7 +145,7 @@ export class EmpresaUseCases {
         throw new Error(errorMessage);
       }
 
-      await trx.update(pessoa).set({
+      await trx.update(pessoaTable).set({
         idEmpresa: empresaInserida.id,
         tipo: 'funcionario'
       });
@@ -322,5 +338,109 @@ export class EmpresaUseCases {
         sobrenome: criarPessoalResult.sobrenome
       };
     });
+  }
+
+  public async alterarCliente({
+    codigoUsuarioRequisitante,
+    codigo: codigoCliente,
+    nome,
+    sobrenome,
+    cpf
+  }: AlterarClienteArgs): Promise<AlterarClienteResult> {
+    const usuarioRequisitante = await db.query.usuario.findFirst({
+      with: {
+        pessoa: {
+          with: {
+            empresa: true
+          }
+        }
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoUsuarioRequisitante)
+    });
+
+    if (usuarioRequisitante === undefined) {
+      return throwBusinessErrorAndLog(
+        this.log,
+        'Usuário solicitante não encontrado.'
+      );
+    }
+
+    if (usuarioRequisitante?.pessoa.empresa?.id === undefined) {
+      return throwBusinessErrorAndLog(
+        this.log,
+        'Usuário solicitante não faz parte da empresa.'
+      );
+    }
+
+    if (usuarioRequisitante.pessoa.tipo !== 'funcionario') {
+      return throwBusinessErrorAndLog(
+        this.log,
+        'Apenas funcionários da empresa podem alterar clientes.'
+      );
+    }
+
+    const clienteDb = await db.query.pessoa.findFirst({
+      with: {
+        empresa: true
+      },
+      where: ({ codigo: codigoClienteExistente, idEmpresa }, { eq }) =>
+        and(
+          eq(codigoClienteExistente, codigoCliente),
+          eq(idEmpresa, usuarioRequisitante?.pessoa.idEmpresa ?? 0)
+        )
+    });
+
+    if (clienteDb === undefined) {
+      return throwBusinessErrorAndLog(this.log, 'Pessoa não encontrada.');
+    }
+
+    if (clienteDb.cpf.trim() !== cpf.trim()) {
+      const clienteExistenteComMesmoCpf = await db.query.pessoa.findFirst({
+        with: {
+          empresa: true
+        },
+        where: ({ cpf: cpfClienteExistente, idEmpresa }, { eq }) =>
+          and(
+            eq(cpfClienteExistente, cpf),
+            eq(idEmpresa, usuarioRequisitante?.pessoa.idEmpresa ?? 0)
+          )
+      });
+
+      if (clienteExistenteComMesmoCpf !== undefined) {
+        return throwBusinessErrorAndLog(this.log, 'CPF já utilizado.');
+      }
+    }
+
+    const cliente = new Pessoa(
+      clienteDb.codigo,
+      clienteDb.nome,
+      clienteDb.sobrenome,
+      clienteDb.cpf,
+      clienteDb.empresa?.codigo,
+      clienteDb.tipo ?? 'cliente'
+    );
+
+    cliente.alterarDados({ nome, sobrenome, cpf });
+
+    await db
+      .update(pessoaTable)
+      .set({
+        nome: cliente.nome,
+        sobrenome: cliente.sobrenome,
+        cpf: cliente.cpf.value
+      })
+      .where(
+        and(
+          eq(pessoaTable.codigo, cliente.codigo),
+          eq(pessoaTable.idEmpresa, clienteDb.idEmpresa ?? 0)
+        )
+      );
+
+    return {
+      codigo: cliente.codigo,
+      cpf: cliente.cpf.value,
+      nome: cliente.nome,
+      sobrenome: cliente.sobrenome
+    };
   }
 }

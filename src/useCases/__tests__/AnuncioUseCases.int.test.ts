@@ -56,7 +56,7 @@ describe('Anuncio use cases testes', () => {
 
   it('não deve permitir criar anúncio se usuário solicitante não for funcionário da imobiliária', async () => {
     const pessoa = mockData.empresas[0].pessoas[0];
-    const pessoa4 = mockData.empresas[0].pessoas[3];
+    const cliente = mockData.empresas[0].clientes[0];
 
     const codigoImovel = await imovelUseCases.cadastrarImovel({
       codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
@@ -66,7 +66,7 @@ describe('Anuncio use cases testes', () => {
 
     await expect(
       anuncioUseCases.criarAnuncio({
-        codigoUsuarioSolicitante: pessoa4.usuario?.codigo ?? '',
+        codigoUsuarioSolicitante: cliente.usuario?.codigo ?? '',
         codigoImovel,
         valor: '2',
         valorCondominio: '1',
