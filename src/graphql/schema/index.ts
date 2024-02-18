@@ -1,9 +1,11 @@
 import { builder } from './builder';
 import { Usuario } from './usuario';
 
+import './clienteEmpresa';
 import './empresa';
 import './authentication';
 import './errors';
+import './imovel';
 
 export const buildSchema = () => {
   builder.queryType({

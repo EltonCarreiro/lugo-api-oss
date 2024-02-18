@@ -1,30 +1,14 @@
 import { BusinessError } from '@/shared/errors/BusinessError';
 import { builder } from './builder';
-
-interface ClienteEmpresa {
-  codigo: string;
-  nome: string;
-  sobrenome: string;
-}
+import { ClienteEmpresa, ClienteEmpresaType } from './clienteEmpresa';
 
 export interface Empresa {
   codigo: string;
   nomeFantasia: string;
   razaoSocial: string;
   cnpj: string;
-  clientes: ClienteEmpresa[];
+  clientes: ClienteEmpresaType[];
 }
-
-export const ClienteEmpresa = builder
-  .objectRef<ClienteEmpresa>('ClienteEmpresa')
-  .implement({
-    description: 'Informações de um cliente.',
-    fields: (t) => ({
-      codigo: t.exposeString('codigo'),
-      nome: t.exposeString('nome'),
-      sobrenome: t.exposeString('sobrenome')
-    })
-  });
 
 export const Empresa = builder.objectRef<Empresa>('Empresa').implement({
   description: 'Informações da empresa e seus respectivos dados',
@@ -36,17 +20,19 @@ export const Empresa = builder.objectRef<Empresa>('Empresa').implement({
     clientes: t.field({
       type: [ClienteEmpresa],
       description: 'Todos os clientes da empresa.',
-      resolve: (parent, _args, ctx) => {
+      resolve: async (parent, _args, ctx) => {
         const usuario = ctx.usuarioLogado;
 
         if (usuario === undefined) {
           throw new Error('Não autenticado.');
         }
 
-        return ctx.useCases.empresa.listarClientes({
+        const clientes = await ctx.useCases.empresa.listarClientes({
           codigoEmpresa: parent.codigo,
           codigoUsuarioSolicitante: usuario.codigo
         });
+
+        return clientes.map((cliente) => ({ ...cliente, imoveis: [] }));
       }
     })
   })
@@ -141,12 +127,14 @@ builder.mutationField('cadastrarCliente', (t) =>
         throw new Error('Usuário não autenticado.');
       }
 
-      return ctx.useCases.empresa.cadastrarCliente({
+      const result = await ctx.useCases.empresa.cadastrarCliente({
         codigoUsuarioRequisitante: usuarioLogado.codigo,
         cpf,
         nome,
         sobrenome
       });
+
+      return { ...result, imoveis: [] };
     }
   })
 );
@@ -171,13 +159,15 @@ builder.mutationField('alterarCliente', (t) =>
         throw new Error('Usuário não autenticado.');
       }
 
-      return ctx.useCases.empresa.alterarCliente({
+      const result = await ctx.useCases.empresa.alterarCliente({
         codigoUsuarioRequisitante: usuarioLogado.codigo,
         codigo: args.codigo,
         cpf: args.cpf,
         nome: args.nome,
         sobrenome: args.sobrenome
       });
+
+      return { ...result, imoveis: [] };
     }
   })
 );
