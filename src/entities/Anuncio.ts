@@ -33,15 +33,15 @@ export class Anuncio {
       throw new BusinessError('Código do imóvel obrigatório.');
     }
 
-    if (valor.isLessThanOrEqualTo(0)) {
+    if (valor.isNaN() || valor.isLessThanOrEqualTo(0)) {
       throw new BusinessError('Valor inválido.');
     }
 
-    if (valorCondominio.isLessThanOrEqualTo(0)) {
+    if (valorCondominio.isNaN() || valorCondominio.isLessThanOrEqualTo(0)) {
       throw new BusinessError('Valor do condomínio inválido.');
     }
 
-    if (valorIPTU.isLessThanOrEqualTo(0)) {
+    if (valorIPTU.isNaN() || valorIPTU.isLessThanOrEqualTo(0)) {
       throw new BusinessError('Valor do IPTU inválido.');
     }
 
