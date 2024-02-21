@@ -114,7 +114,7 @@ describe('Anuncio use cases testes', () => {
       metrosQuadrados: 222
     });
 
-    await anuncioUseCases.criarAnuncio({
+    const anuncioCriado = await anuncioUseCases.criarAnuncio({
       codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
       codigoImovel,
       valor: '1',
@@ -133,5 +133,14 @@ describe('Anuncio use cases testes', () => {
     expect(queryResult?.anuncio.valor).toBe(1);
     expect(queryResult?.anuncio.valorCondominio).toBe(2);
     expect(queryResult?.anuncio.valorIPTU).toBe(3);
+
+    expect(queryResult?.anuncio.codigo).toBe(anuncioCriado.codigo);
+    expect(queryResult?.anuncio.valor.toString()).toBe(anuncioCriado.valor);
+    expect(queryResult?.anuncio.valorCondominio.toString()).toBe(
+      anuncioCriado.valorCondominio
+    );
+    expect(queryResult?.anuncio.valorIPTU.toString()).toBe(
+      anuncioCriado.valorIPTU
+    );
   });
 });

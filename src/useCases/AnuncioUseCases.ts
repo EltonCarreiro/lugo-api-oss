@@ -14,6 +14,21 @@ interface CriarAnuncioArgs {
   valorIPTU: string;
 }
 
+interface AlterarAnuncioArgs {
+  codigoUsuarioSolicitante: string;
+  codigoAnuncio: string;
+  valor: string;
+  valorCondominio: string;
+  valorIPTU: string;
+}
+
+interface CriarAlterarAnuncioResult {
+  codigo: string;
+  valor: string;
+  valorCondominio: string;
+  valorIPTU: string;
+}
+
 export class AnuncioUseCases {
   constructor(private log: Logger) {}
 
@@ -23,7 +38,7 @@ export class AnuncioUseCases {
     valor,
     valorCondominio,
     valorIPTU
-  }: CriarAnuncioArgs) {
+  }: CriarAnuncioArgs): Promise<CriarAlterarAnuncioResult> {
     this.log.info('Criando anúncio.');
     return db.transaction(async (trx) => {
       const usuarioDb = await trx.query.usuario.findFirst({
@@ -88,14 +103,30 @@ export class AnuncioUseCases {
         valorIPTU: new BigNumber(valorIPTU)
       });
 
+      const codigo = nanoid();
+
       await trx.insert(anuncio).values({
         idImovel: imovel.id,
+        codigo,
         valor: novoAnuncio.valor.toString(),
         valorCondominio: novoAnuncio.valorCondominio.toString(),
         valorIPTU: novoAnuncio.valorIPTU.toString()
       });
 
       this.log.info('Anúncio criado com sucesso.');
+
+      return {
+        codigo,
+        valor: novoAnuncio.valor.toString(),
+        valorCondominio: novoAnuncio.valorCondominio.toString(),
+        valorIPTU: novoAnuncio.valorIPTU.toString()
+      };
     });
+  }
+
+  public async alterarAnuncio(
+    _args: AlterarAnuncioArgs
+  ): Promise<CriarAlterarAnuncioResult> {
+    throw new Error('Not yet implemented');
   }
 }
