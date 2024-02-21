@@ -1,3 +1,4 @@
+import { AnuncioUseCases } from '@/useCases/AnuncioUseCases';
 import { AuthUseCases } from '@/useCases/AuthUseCases';
 import { EmpresaUseCases } from '@/useCases/EmpresaUseCases';
 import { ImovelUseCases } from '@/useCases/ImovelUseCases';
@@ -17,6 +18,7 @@ interface UseCases {
   usuarioPessoa: UsuarioPessoaUseCases;
   empresa: EmpresaUseCases;
   imovel: ImovelUseCases;
+  anuncio: AnuncioUseCases;
 }
 
 export interface SchemaType {

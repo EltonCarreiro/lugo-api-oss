@@ -6,6 +6,7 @@ import './empresa';
 import './authentication';
 import './errors';
 import './imovel';
+import './anuncio';
 
 export const buildSchema = () => {
   builder.queryType({

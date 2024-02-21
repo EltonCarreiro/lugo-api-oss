@@ -12,6 +12,7 @@ import { PessoaUseCases } from '@/useCases/PessoaUseCases';
 import { createLogger } from '@/logging';
 import { nanoid } from 'nanoid';
 import { ImovelUseCases } from '@/useCases/ImovelUseCases';
+import { AnuncioUseCases } from '@/useCases/AnuncioUseCases';
 
 export const setup = async (
   jwtConfig: JWTConfig,
@@ -44,6 +45,7 @@ export const setup = async (
         requestLogger
       );
       const imovelUseCases = new ImovelUseCases(requestLogger);
+      const anuncioUseCases = new AnuncioUseCases(requestLogger);
 
       const jwt = (await request.cookieStore?.get('z'))?.value ?? '';
 
@@ -53,7 +55,8 @@ export const setup = async (
           usuario: usuarioUseCases,
           usuarioPessoa: usuarioPessoaUseCases,
           empresa: empresaUseCases,
-          imovel: imovelUseCases
+          imovel: imovelUseCases,
+          anuncio: anuncioUseCases
         },
         jwt,
         usuarioLogado:
