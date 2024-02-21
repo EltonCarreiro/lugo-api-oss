@@ -42,6 +42,18 @@ describe('Anúncio testes', () => {
       );
     });
 
+    it('não deve permitir nenhum valor inválido (com caracteres)', () => {
+      expect(() => criarAnuncioFake({ valor: new BigNumber('a') })).toThrow(
+        'Valor inválido'
+      );
+      expect(() =>
+        criarAnuncioFake({ valorCondominio: new BigNumber('a') })
+      ).toThrow('Valor do condomínio inválido.');
+      expect(() => criarAnuncioFake({ valorIPTU: new BigNumber('a') })).toThrow(
+        'Valor do IPTU inválido.'
+      );
+    });
+
     it('deve criar anúncio com valores corretos', () => {
       const args = criarArgumentosAnuncioFake({});
       const anuncio = criarAnuncioFake(args);

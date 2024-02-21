@@ -1,9 +1,12 @@
 import { builder } from './builder';
 import { Usuario } from './usuario';
 
+import './clienteEmpresa';
 import './empresa';
 import './authentication';
 import './errors';
+import './imovel';
+import './anuncio';
 
 export const buildSchema = () => {
   builder.queryType({

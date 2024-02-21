@@ -2,13 +2,29 @@ import { db } from '@/data/db';
 import { Anuncio } from '@/entities/Anuncio';
 import BigNumber from 'bignumber.js';
 import { nanoid } from 'nanoid';
-import { anuncio } from '@/schema';
+import { anuncio as anuncioTable } from '@/schema';
 import { Logger } from '@/logging';
 import { throwBusinessErrorAndLog } from '@/shared/errors/throwAndLog';
+import { eq } from 'drizzle-orm';
 
 interface CriarAnuncioArgs {
   codigoUsuarioSolicitante: string;
   codigoImovel: string;
+  valor: string;
+  valorCondominio: string;
+  valorIPTU: string;
+}
+
+interface AlterarAnuncioArgs {
+  codigoUsuarioSolicitante: string;
+  codigoAnuncio: string;
+  valor: string;
+  valorCondominio: string;
+  valorIPTU: string;
+}
+
+interface AnuncioResult {
+  codigo: string;
   valor: string;
   valorCondominio: string;
   valorIPTU: string;
@@ -23,7 +39,7 @@ export class AnuncioUseCases {
     valor,
     valorCondominio,
     valorIPTU
-  }: CriarAnuncioArgs) {
+  }: CriarAnuncioArgs): Promise<AnuncioResult> {
     this.log.info('Criando anúncio.');
     return db.transaction(async (trx) => {
       const usuarioDb = await trx.query.usuario.findFirst({
@@ -88,14 +104,149 @@ export class AnuncioUseCases {
         valorIPTU: new BigNumber(valorIPTU)
       });
 
-      await trx.insert(anuncio).values({
+      const codigo = nanoid();
+
+      await trx.insert(anuncioTable).values({
         idImovel: imovel.id,
+        codigo,
         valor: novoAnuncio.valor.toString(),
         valorCondominio: novoAnuncio.valorCondominio.toString(),
         valorIPTU: novoAnuncio.valorIPTU.toString()
       });
 
       this.log.info('Anúncio criado com sucesso.');
+
+      return {
+        codigo,
+        valor: novoAnuncio.valor.toString(),
+        valorCondominio: novoAnuncio.valorCondominio.toString(),
+        valorIPTU: novoAnuncio.valorIPTU.toString()
+      };
     });
+  }
+
+  public async alterarAnuncio({
+    codigoUsuarioSolicitante,
+    codigoAnuncio,
+    valor,
+    valorCondominio,
+    valorIPTU
+  }: AlterarAnuncioArgs): Promise<AnuncioResult> {
+    this.log.info(`Alterando anúncio ${codigoAnuncio}`);
+
+    const usuarioSolicitabteDb = await db.query.usuario.findFirst({
+      with: {
+        pessoa: {
+          with: {
+            empresa: true
+          }
+        }
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoUsuarioSolicitante)
+    });
+
+    if (usuarioSolicitabteDb === undefined) {
+      return throwBusinessErrorAndLog(
+        this.log,
+        'Pessoa associada á conta não encontrada.'
+      );
+    }
+
+    const anuncioDb = await db.query.anuncio.findFirst({
+      with: {
+        imovel: {
+          with: {
+            dono: {
+              with: {
+                empresa: true
+              }
+            }
+          }
+        }
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoAnuncio)
+    });
+
+    if (anuncioDb === undefined) {
+      return throwBusinessErrorAndLog(this.log, 'Anúncio não encontrado.');
+    }
+
+    const usuarioEDaMesmaEmpresa =
+      anuncioDb.imovel.dono.empresa?.codigo ===
+      usuarioSolicitabteDb.pessoa.empresa?.codigo;
+
+    const usuarioEDono =
+      anuncioDb.imovel.dono.codigo === usuarioSolicitabteDb.pessoa.codigo;
+
+    const usuarioSolicitanteEFuncionario =
+      usuarioSolicitabteDb.pessoa.tipo === 'funcionario';
+
+    if (
+      !usuarioEDono &&
+      (!usuarioEDaMesmaEmpresa || !usuarioSolicitanteEFuncionario)
+    ) {
+      return throwBusinessErrorAndLog(
+        this.log,
+        'Alteração só pode ser feita por funcionário da imobiliária ou dono do imóvel.'
+      );
+    }
+
+    const anuncio = new Anuncio({
+      codigo: anuncioDb.codigo,
+      codigoImovel: anuncioDb.imovel.codigo,
+      valor: new BigNumber(anuncioDb.valor),
+      valorCondominio: new BigNumber(anuncioDb.valorCondominio),
+      valorIPTU: new BigNumber(anuncioDb.valorIPTU)
+    });
+
+    anuncio.alterarAnuncio({
+      valor: new BigNumber(valor),
+      valorCondominio: new BigNumber(valorCondominio),
+      valorIPTU: new BigNumber(valorIPTU)
+    });
+
+    await db
+      .update(anuncioTable)
+      .set({
+        valor: anuncio.valor.toString(),
+        valorCondominio: anuncio.valorCondominio.toString(),
+        valorIPTU: anuncio.valorIPTU.toString()
+      })
+      .where(eq(anuncioTable.codigo, codigoAnuncio));
+
+    return {
+      codigo: codigoAnuncio,
+      valor: anuncio.valor.toString(),
+      valorCondominio: anuncio.valorCondominio.toString(),
+      valorIPTU: anuncio.valorIPTU.toString()
+    };
+  }
+
+  public async obterAnuncioDoImovel(
+    codigoImovel: string
+  ): Promise<AnuncioResult | undefined> {
+    const imovelDb = await db.query.imovel.findFirst({
+      with: {
+        anuncio: true
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoImovel)
+    });
+
+    if (imovelDb === undefined) {
+      return throwBusinessErrorAndLog(this.log, 'Imóvel não encontrado.');
+    }
+
+    const anuncioDb = imovelDb.anuncio ?? undefined;
+
+    if (anuncioDb === undefined) {
+      return undefined;
+    }
+
+    return {
+      codigo: anuncioDb.codigo,
+      valor: new BigNumber(anuncioDb.valor).toString(),
+      valorCondominio: new BigNumber(anuncioDb.valorCondominio).toString(),
+      valorIPTU: new BigNumber(anuncioDb.valorIPTU).toString()
+    };
   }
 }

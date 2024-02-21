@@ -90,6 +90,7 @@ export const imovelRelations = relations(imovel, ({ one }) => ({
 
 export const anuncio = schema.table('anuncio', {
   id: serial('id').primaryKey(),
+  codigo: text('codigo').unique().notNull(),
   idImovel: integer('imovel_id')
     .notNull()
     .references(() => imovel.id),

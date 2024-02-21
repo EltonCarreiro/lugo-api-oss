@@ -128,11 +128,11 @@ describe('Empresa use cases testes', () => {
     });
 
     it('não deve permitir alterar empresa se usuário fizer parte da mesma mas não for funcionário', async () => {
-      const pessoa4 = mockData.empresas[0].pessoas[3];
+      const cliente = mockData.empresas[0].clientes[0];
 
       await expect(
         empresaUseCases.alterarEmpresa({
-          codigoUsuarioSolicitante: pessoa4.usuario?.codigo ?? '',
+          codigoUsuarioSolicitante: cliente.usuario?.codigo ?? '',
           codigo: mockData.empresas[0].codigo,
           cnpj: gerarCnpj(),
           nomeFantasia: 'nome_fantasia_edited',
@@ -191,12 +191,12 @@ describe('Empresa use cases testes', () => {
 
     it('não deve listar clientes caso usuário solicitante não seja funcionário', async () => {
       const empresa = mockData.empresas[0];
-      const pessoa4 = empresa.pessoas[3];
+      const cliente = empresa.clientes[0];
 
       await expect(
         empresaUseCases.listarClientes({
           codigoEmpresa: empresa.codigo,
-          codigoUsuarioSolicitante: pessoa4.usuario?.codigo ?? ''
+          codigoUsuarioSolicitante: cliente.usuario?.codigo ?? ''
         })
       ).rejects.toThrow(
         'Apenas funcionários da empresa podem ver seus clientes.'
@@ -207,17 +207,21 @@ describe('Empresa use cases testes', () => {
       const empresa = mockData.empresas[0];
       const pessoa = empresa.pessoas[0];
 
-      const pessoa4 = empresa.pessoas[3];
+      const cliente = empresa.clientes[0];
+      const cliente2 = empresa.clientes[1];
 
       const clientes = await empresaUseCases.listarClientes({
         codigoEmpresa: empresa.codigo,
         codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? ''
       });
 
-      expect(clientes).toHaveLength(1);
-      expect(clientes[0].codigo).toBe(pessoa4.codigo);
-      expect(clientes[0].nome).toBe(pessoa4.nome);
-      expect(clientes[0].sobrenome).toBe(pessoa4.sobrenome);
+      expect(clientes).toHaveLength(2);
+      expect(clientes[0].codigo).toBe(cliente.codigo);
+      expect(clientes[0].nome).toBe(cliente.nome);
+      expect(clientes[0].sobrenome).toBe(cliente.sobrenome);
+      expect(clientes[1].codigo).toBe(cliente2.codigo);
+      expect(clientes[1].nome).toBe(cliente2.nome);
+      expect(clientes[1].sobrenome).toBe(cliente2.sobrenome);
     });
   });
 
@@ -247,11 +251,11 @@ describe('Empresa use cases testes', () => {
     });
 
     it('não deve cadastrar cliente se usuário solicitante faz parte da empresa mas não é funcionário', () => {
-      const pessoa4 = mockData.empresas[0].pessoas[3];
+      const cliente = mockData.empresas[0].clientes[0];
 
       return expect(
         empresaUseCases.cadastrarCliente({
-          codigoUsuarioRequisitante: pessoa4.usuario?.codigo ?? '',
+          codigoUsuarioRequisitante: cliente.usuario?.codigo ?? '',
           cpf: gerarCpf(),
           nome: 'nome_fake',
           sobrenome: 'sobrenome_fake'
@@ -281,6 +285,106 @@ describe('Empresa use cases testes', () => {
       expect(queryResult?.nome).toBe('fake_nome');
       expect(queryResult?.sobrenome).toBe('fake_sobrenome');
       expect(queryResult?.tipo).toBe('cliente');
+    });
+  });
+
+  describe('ao alterar cliente', () => {
+    it('não deve cadastrar cliente caso o usuário solicitante não seja encontrado', () => {
+      const cliente = mockData.empresas[0].clientes[1];
+
+      return expect(
+        empresaUseCases.alterarCliente({
+          codigoUsuarioRequisitante: 'not_existing',
+          codigo: cliente.codigo,
+          cpf: gerarCpf(),
+          nome: 'nome_fake',
+          sobrenome: 'sobrenome_fake'
+        })
+      ).rejects.toThrow('Usuário solicitante não encontrado.');
+    });
+
+    it('não deve cadastrar cliente caso usuário solicitante não faça parte da empresa', () => {
+      const cliente = mockData.empresas[0].clientes[0];
+      const pessoa = mockData.pessoas[0];
+
+      return expect(
+        empresaUseCases.alterarCliente({
+          codigoUsuarioRequisitante: pessoa.usuario?.codigo ?? '',
+          codigo: cliente.codigo,
+          cpf: gerarCpf(),
+          nome: 'nome_fake',
+          sobrenome: 'sobrenome_fake'
+        })
+      ).rejects.toThrow('Usuário solicitante não faz parte da empresa.');
+    });
+
+    it('não deve cadastrar cliente se usuário solicitante faz parte da empresa mas não é funcionário', () => {
+      const cliente1 = mockData.empresas[0].clientes[0];
+      const cliente2 = mockData.empresas[0].clientes[1];
+
+      return expect(
+        empresaUseCases.alterarCliente({
+          codigoUsuarioRequisitante: cliente1.usuario?.codigo ?? '',
+          codigo: cliente2.codigo,
+          cpf: gerarCpf(),
+          nome: 'nome_fake',
+          sobrenome: 'sobrenome_fake'
+        })
+      ).rejects.toThrow(
+        'Apenas funcionários da empresa podem alterar clientes.'
+      );
+    });
+
+    it('não deve permitir alterar para um cpf já utilizado por alguém da mesma empresa', () => {
+      const funcionario = mockData.empresas[0].pessoas[0];
+      const cliente1 = mockData.empresas[0].clientes[0];
+      const cliente2 = mockData.empresas[0].clientes[1];
+
+      return expect(
+        empresaUseCases.alterarCliente({
+          codigoUsuarioRequisitante: funcionario.usuario?.codigo ?? '',
+          codigo: cliente1.codigo,
+          cpf: cliente2.cpf,
+          nome: 'nome_fake',
+          sobrenome: 'sobrenome_fake'
+        })
+      ).rejects.toThrow('CPF já utilizado.');
+    });
+
+    it('não deve permitir alterar pessoa caso não esteja cadastrada', () => {
+      const funcionario = mockData.empresas[0].pessoas[0];
+
+      return expect(
+        empresaUseCases.alterarCliente({
+          codigoUsuarioRequisitante: funcionario.usuario?.codigo ?? '',
+          codigo: 'non_existing',
+          cpf: gerarCpf(),
+          nome: 'nome_fake',
+          sobrenome: 'sobrenome_fake'
+        })
+      ).rejects.toThrow('Pessoa não encontrada.');
+    });
+
+    it('deve alterar dados com sucesso', async () => {
+      const funcionario = mockData.empresas[0].pessoas[0];
+      const cliente = mockData.empresas[0].clientes[0];
+
+      const result = await empresaUseCases.alterarCliente({
+        codigoUsuarioRequisitante: funcionario.usuario?.codigo ?? '',
+        codigo: cliente.codigo,
+        cpf: gerarCpf(),
+        nome: 'new_nome_fake',
+        sobrenome: 'new_sobrenome_fake'
+      });
+
+      const queryResult = await db.query.pessoa.findFirst({
+        where: ({ codigo }, { eq }) => eq(codigo, result.codigo)
+      });
+
+      expect(result.codigo).toBe(queryResult?.codigo);
+      expect(result.nome).toBe(queryResult?.nome);
+      expect(result.sobrenome).toBe(queryResult?.sobrenome);
+      expect(result.cpf).toBe(queryResult?.cpf);
     });
   });
 });

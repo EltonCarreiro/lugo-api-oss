@@ -136,7 +136,7 @@ describe('Imovel use cases testes', () => {
 
     it('não deve alterar imóvel caso alteração seja feita por usuário cliente que não seja dono do imóvel', async () => {
       const pessoa = mockData.empresas[0].pessoas[0];
-      const pessoa4 = mockData.empresas[0].pessoas[3];
+      const cliente = mockData.empresas[0].clientes[0];
 
       const codigoImovel = await imovelUseCases.cadastrarImovel({
         codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
@@ -147,7 +147,7 @@ describe('Imovel use cases testes', () => {
       await expect(
         imovelUseCases.alterarImovel({
           codigoImovel: codigoImovel,
-          codigoUsuarioSolicitante: pessoa4.usuario?.codigo ?? '',
+          codigoUsuarioSolicitante: cliente.usuario?.codigo ?? '',
           endereco: 'fake_endereco_atualizado',
           metrosQuadrados: 555
         })
@@ -229,6 +229,198 @@ describe('Imovel use cases testes', () => {
       expect(queryResult?.endereco).toBe('novo_endereco');
       expect(queryResult?.metrosQuadrados).toBe(333);
       expect(queryResult?.idDono).toBe(pessoa.id);
+    });
+  });
+
+  describe('ao obter dono do imóvel', () => {
+    it('deve retornar erro ao não encontrar imóvel', () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
+      return expect(
+        imovelUseCases.obterDono({
+          codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+          codigoImovel: 'non_existing'
+        })
+      ).rejects.toThrow('Imóvel não encontrado.');
+    });
+
+    it('deve retornar erro caso usuário solicitante não faça parte da empresa responsável pelo imóvel', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+      const cliente = empresa.clientes[0];
+
+      const codigoImovel = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco',
+        metrosQuadrados: 2
+      });
+
+      const pessoaOutraEmpresa = mockData.empresas[1].pessoas[0];
+
+      return expect(
+        imovelUseCases.obterDono({
+          codigoUsuarioSolicitante: pessoaOutraEmpresa.usuario?.codigo ?? '',
+          codigoImovel
+        })
+      ).rejects.toThrow('Imóvel não encontrado.');
+    });
+
+    it('deve retornar erro caso usuário solicitante faça parte da empresa responsável pelo imóvel porém não é funcionário', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+      const cliente = empresa.clientes[0];
+      const cliente2 = empresa.clientes[1];
+
+      const codigoImovel = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco',
+        metrosQuadrados: 2
+      });
+
+      return expect(
+        imovelUseCases.obterDono({
+          codigoUsuarioSolicitante: cliente2.usuario?.codigo ?? '',
+          codigoImovel
+        })
+      ).rejects.toThrow('Imóvel não encontrado.');
+    });
+
+    it('deve retornar dados do dono corretamente', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+      const cliente = empresa.clientes[0];
+
+      const codigoImovel = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco',
+        metrosQuadrados: 2
+      });
+
+      const infosDono = await imovelUseCases.obterDono({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoImovel
+      });
+
+      expect(infosDono.codigo).toBe(cliente.codigo);
+      expect(infosDono.nome).toBe(cliente.nome);
+      expect(infosDono.sobrenome).toBe(cliente.sobrenome);
+    });
+  });
+
+  describe('ao obter imóveis do dono', () => {
+    it('não deve retornar imóveis caso usuario solicitante não seja encontrado', () => {
+      return expect(
+        imovelUseCases.obterImoveisDono({
+          codigoUsuarioSolicitante: 'non_existing',
+          codigoDono: mockData.empresas[0].clientes[0].usuario?.codigo ?? ''
+        })
+      ).rejects.toThrow('Usuário solicitante não encontrado.');
+    });
+
+    it('não deve retornar imóveis caso dono não seja encontrado', () => {
+      return expect(
+        imovelUseCases.obterImoveisDono({
+          codigoUsuarioSolicitante:
+            mockData.empresas[0].pessoas[0].usuario?.codigo ?? '',
+          codigoDono: 'non_existing'
+        })
+      ).rejects.toThrow('Dono do imóvel não encontrado.');
+    });
+
+    it('não deve retornar imóveis caso usuario solicitante não faça parte da empresa', () => {
+      return expect(
+        imovelUseCases.obterImoveisDono({
+          codigoUsuarioSolicitante:
+            mockData.empresas[0].pessoas[0].usuario?.codigo ?? '',
+          codigoDono: mockData.pessoas[0].codigo
+        })
+      ).rejects.toThrow(
+        'Apenas o dono do imóvel ou funcionário da imobiliária podem visualizar um imóvel.'
+      );
+    });
+
+    it('não deve retornar imóveis caso usuario solicitante faça parte da empresa porém não é funcionário', () => {
+      const empresa = mockData.empresas[0];
+      const cliente1 = empresa.clientes[0];
+      const cliente2 = empresa.clientes[1];
+
+      return expect(
+        imovelUseCases.obterImoveisDono({
+          codigoUsuarioSolicitante: cliente1.usuario?.codigo ?? '',
+          codigoDono: cliente2.codigo
+        })
+      ).rejects.toThrow(
+        'Apenas o dono do imóvel ou funcionário da imobiliária podem visualizar um imóvel.'
+      );
+    });
+
+    it('deve retornar imóveis caso usuário solicitante seja funcionário da empresa', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+      const cliente = empresa.clientes[0];
+
+      const codigoImovel1 = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco',
+        metrosQuadrados: 123
+      });
+
+      const codigoImovel2 = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco_2',
+        metrosQuadrados: 321
+      });
+
+      const imoveis = await imovelUseCases.obterImoveisDono({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo
+      });
+
+      expect(imoveis[0]?.codigo).toBe(codigoImovel1);
+      expect(imoveis[0]?.endereco).toBe('fake_endereco');
+      expect(imoveis[0]?.metrosQuadrados).toBe(123);
+
+      expect(imoveis[1]?.codigo).toBe(codigoImovel2);
+      expect(imoveis[1]?.endereco).toBe('fake_endereco_2');
+      expect(imoveis[1]?.metrosQuadrados).toBe(321);
+    });
+
+    it('deve retornar imóveis caso usuario solicitante seja dono do imóvel', async () => {
+      const empresa = mockData.empresas[0];
+      const pessoa = empresa.pessoas[0];
+      const cliente = empresa.clientes[0];
+
+      const codigoImovel1 = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco',
+        metrosQuadrados: 123
+      });
+
+      const codigoImovel2 = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: cliente.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo,
+        endereco: 'fake_endereco_2',
+        metrosQuadrados: 321
+      });
+
+      const imoveis = await imovelUseCases.obterImoveisDono({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoDono: cliente.codigo
+      });
+
+      expect(imoveis[0]?.codigo).toBe(codigoImovel1);
+      expect(imoveis[0]?.endereco).toBe('fake_endereco');
+      expect(imoveis[0]?.metrosQuadrados).toBe(123);
+
+      expect(imoveis[1]?.codigo).toBe(codigoImovel2);
+      expect(imoveis[1]?.endereco).toBe('fake_endereco_2');
+      expect(imoveis[1]?.metrosQuadrados).toBe(321);
     });
   });
 });

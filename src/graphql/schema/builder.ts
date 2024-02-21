@@ -1,5 +1,7 @@
+import { AnuncioUseCases } from '@/useCases/AnuncioUseCases';
 import { AuthUseCases } from '@/useCases/AuthUseCases';
 import { EmpresaUseCases } from '@/useCases/EmpresaUseCases';
+import { ImovelUseCases } from '@/useCases/ImovelUseCases';
 import { UsuarioPessoaUseCases } from '@/useCases/UsuarioPessoaUseCases';
 import { UsuarioUseCases } from '@/useCases/UsuarioUseCases';
 import SchemaBuilder from '@pothos/core';
@@ -15,6 +17,8 @@ interface UseCases {
   usuario: UsuarioUseCases;
   usuarioPessoa: UsuarioPessoaUseCases;
   empresa: EmpresaUseCases;
+  imovel: ImovelUseCases;
+  anuncio: AnuncioUseCases;
 }
 
 export interface SchemaType {
