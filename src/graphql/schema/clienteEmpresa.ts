@@ -18,10 +18,7 @@ export const ClienteEmpresa = builder
       sobrenome: t.exposeString('sobrenome'),
       imoveis: t.field({
         type: [Imovel],
-        args: {
-          codigoDono: t.arg.string({ required: true })
-        },
-        resolve: async (_, args, ctx) => {
+        resolve: async (parent, args, ctx) => {
           const codigoUsuarioSolicitante = ctx.usuarioLogado?.codigo;
 
           if (!codigoUsuarioSolicitante) {
@@ -30,7 +27,7 @@ export const ClienteEmpresa = builder
 
           const imoveis = await ctx.useCases.imovel.obterImoveisDono({
             codigoUsuarioSolicitante,
-            codigoDono: args.codigoDono
+            codigoDono: parent.codigo
           });
 
           return imoveis.map((imovel) => ({ ...imovel, anuncio: undefined }));
