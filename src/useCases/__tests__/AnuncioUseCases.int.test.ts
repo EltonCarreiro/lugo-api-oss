@@ -301,4 +301,50 @@ describe('Anuncio use cases testes', () => {
       expect(alteracaoResult.valorIPTU).toBe('5');
     });
   });
+
+  describe('ao obter anuncio do imovel', () => {
+    it('deve lançar erro caso imóvel não seja encontrado', () => {
+      return expect(
+        anuncioUseCases.obterAnuncioDoImovel('non_existing')
+      ).rejects.toThrow('Imóvel não encontrado.');
+    });
+
+    it('não deve retornar nada caso imóvel não possua anúncio cadastrado', async () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
+      const codigoImovel = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        endereco: 'endereco',
+        metrosQuadrados: 10
+      });
+
+      const anuncio = await anuncioUseCases.obterAnuncioDoImovel(codigoImovel);
+      expect(anuncio).toBeUndefined();
+    });
+
+    it('deve retornar anúncio corretamente', async () => {
+      const pessoa = mockData.empresas[0].pessoas[0];
+
+      const codigoImovel = await imovelUseCases.cadastrarImovel({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        endereco: 'endereco',
+        metrosQuadrados: 10
+      });
+
+      const criacaoAnuncioResult = await anuncioUseCases.criarAnuncio({
+        codigoUsuarioSolicitante: pessoa.usuario?.codigo ?? '',
+        codigoImovel,
+        valor: '10',
+        valorCondominio: '20',
+        valorIPTU: '30'
+      });
+
+      const anuncio = await anuncioUseCases.obterAnuncioDoImovel(codigoImovel);
+
+      expect(anuncio?.codigo).toBe(criacaoAnuncioResult.codigo);
+      expect(anuncio?.valor).toBe('10');
+      expect(anuncio?.valorCondominio).toBe('20');
+      expect(anuncio?.valorIPTU).toBe('30');
+    });
+  });
 });

@@ -23,7 +23,7 @@ interface AlterarAnuncioArgs {
   valorIPTU: string;
 }
 
-interface CriarAlterarAnuncioResult {
+interface AnuncioResult {
   codigo: string;
   valor: string;
   valorCondominio: string;
@@ -39,7 +39,7 @@ export class AnuncioUseCases {
     valor,
     valorCondominio,
     valorIPTU
-  }: CriarAnuncioArgs): Promise<CriarAlterarAnuncioResult> {
+  }: CriarAnuncioArgs): Promise<AnuncioResult> {
     this.log.info('Criando anúncio.');
     return db.transaction(async (trx) => {
       const usuarioDb = await trx.query.usuario.findFirst({
@@ -131,7 +131,7 @@ export class AnuncioUseCases {
     valor,
     valorCondominio,
     valorIPTU
-  }: AlterarAnuncioArgs): Promise<CriarAlterarAnuncioResult> {
+  }: AlterarAnuncioArgs): Promise<AnuncioResult> {
     this.log.info(`Alterando anúncio ${codigoAnuncio}`);
 
     const usuarioSolicitabteDb = await db.query.usuario.findFirst({
@@ -219,6 +219,34 @@ export class AnuncioUseCases {
       valor: anuncio.valor.toString(),
       valorCondominio: anuncio.valorCondominio.toString(),
       valorIPTU: anuncio.valorIPTU.toString()
+    };
+  }
+
+  public async obterAnuncioDoImovel(
+    codigoImovel: string
+  ): Promise<AnuncioResult | undefined> {
+    const imovelDb = await db.query.imovel.findFirst({
+      with: {
+        anuncio: true
+      },
+      where: ({ codigo }, { eq }) => eq(codigo, codigoImovel)
+    });
+
+    if (imovelDb === undefined) {
+      return throwBusinessErrorAndLog(this.log, 'Imóvel não encontrado.');
+    }
+
+    const anuncioDb = imovelDb.anuncio ?? undefined;
+
+    if (anuncioDb === undefined) {
+      return undefined;
+    }
+
+    return {
+      codigo: anuncioDb.codigo,
+      valor: new BigNumber(anuncioDb.valor).toString(),
+      valorCondominio: new BigNumber(anuncioDb.valorCondominio).toString(),
+      valorIPTU: new BigNumber(anuncioDb.valorIPTU).toString()
     };
   }
 }

@@ -1,9 +1,11 @@
+import { Anuncio, AnuncioType } from './anuncio';
 import { builder } from './builder';
 
 export interface ImovelType {
   codigo: string;
   metrosQuadrados: number | undefined;
   endereco: string;
+  anuncio: AnuncioType | undefined;
 }
 
 export const Imovel = builder.objectRef<ImovelType>('Imovel').implement({
@@ -11,7 +13,15 @@ export const Imovel = builder.objectRef<ImovelType>('Imovel').implement({
   fields: (t) => ({
     codigo: t.exposeString('codigo'),
     metrosQuadrados: t.exposeInt('metrosQuadrados', { nullable: true }),
-    endereco: t.exposeString('endereco')
+    endereco: t.exposeString('endereco'),
+    anuncio: t.field({
+      type: Anuncio,
+      description: 'Anúncio associado ao imóvel',
+      nullable: true,
+      resolve: (parent, _, ctx) => {
+        return ctx.useCases.anuncio.obterAnuncioDoImovel(parent.codigo);
+      }
+    })
   })
 });
 
@@ -42,7 +52,8 @@ builder.mutationField('criarImovel', (t) =>
       return {
         codigo: codigoImovel,
         endereco,
-        metrosQuadrados
+        metrosQuadrados,
+        anuncio: undefined
       };
     }
   })
@@ -75,7 +86,8 @@ builder.mutationField('alterarImovel', (t) =>
       return {
         codigo: codigoImovel,
         endereco,
-        metrosQuadrados
+        metrosQuadrados,
+        anuncio: undefined
       };
     }
   })

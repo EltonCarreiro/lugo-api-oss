@@ -28,10 +28,12 @@ export const ClienteEmpresa = builder
             throw new Error('Usuário não autenticado');
           }
 
-          return ctx.useCases.imovel.obterImoveisDono({
+          const imoveis = await ctx.useCases.imovel.obterImoveisDono({
             codigoUsuarioSolicitante,
             codigoDono: args.codigoDono
           });
+
+          return imoveis.map((imovel) => ({ ...imovel, anuncio: undefined }));
         }
       })
     })
