@@ -288,7 +288,7 @@ describe('Empresa use cases testes', () => {
     });
   });
 
-  describe.only('ao alterar cliente', () => {
+  describe('ao alterar cliente', () => {
     it('não deve cadastrar cliente caso o usuário solicitante não seja encontrado', () => {
       const cliente = mockData.empresas[0].clientes[1];
 
